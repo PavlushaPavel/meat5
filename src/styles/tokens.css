@@ -1,0 +1,83 @@
+/**
+ * tokens.css — единственный источник переменных (DESIGN.md §3, §4, §5, §6).
+ *
+ * ДВА АКТА, БЕЗ ДВОЙНОЙ КОСВЕННОСТИ. Нельзя объявить `--color-ground: var(--act-ground)`
+ * один раз и переопределять только `--act-ground` на актах: значение кастомного свойства
+ * подставляется там, где объявлено ОНО, а не там, где его использует утилита Tailwind.
+ * Поэтому каждый `[data-act]` объявляет семантические имена напрямую, одним уровнем.
+ *
+ * КОНТРАСТ. Пары «текст на своём фоне» посчитаны по WCAG и держатся ≥4.5:1 для
+ * обычного текста. Ослаблять ради красоты сцены нельзя — человек читает это с
+ * телефона одной рукой.
+ */
+
+@theme {
+  /* ---------- Акт I: город. Дефолт до первого data-act ---------- */
+  --color-ground: #050d1b;
+  --color-ground-deep: #02060e;
+  --color-panel: #0c1a2e;
+  --color-raised: #162b46;
+  --color-line: #243a58;
+
+  --color-ink: #edf2fa;
+  --color-ink-2: #9db0cc;
+  --color-ink-3: #637692;
+  --color-ink-on-gold: #0a0f18;
+
+  --color-gold: #f9b706;
+  --color-gold-soft: #ffd98a;
+  --color-cold: #3e82f7; /* холодный акцент акта: город — электрик */
+  --color-alert: #ff4a3d;
+
+  /* ---------- §4 Типографика ---------- */
+  --font-display: 'Unbounded Variable', 'Unbounded', system-ui, sans-serif;
+  --font-sans: 'Manrope Variable', 'Manrope', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+
+  /* ---------- §5 Пространство и форма ---------- */
+  --spacing-sp1: 8px;
+  --spacing-sp2: 12px;
+  --spacing-sp3: 16px;
+  --spacing-sp4: 24px;
+  --spacing-sp5: 32px;
+  --spacing-sp6: 48px;
+  --spacing-sp7: 64px;
+
+  --radius-chip: 8px;
+  --radius-panel: 18px;
+  --radius-card: 22px;
+
+  /* ---------- §6 Мотион ---------- */
+  --ease-e-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-e-inout: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+:root {
+  --gutter: 20px;
+  --app-max: 460px;
+  --bar-h: 84px;
+
+  --t-press: 140ms;
+  --t-ui: 220ms;
+  --t-scene: 520ms;
+
+  /* Кислота живёт только в лаборатории (DESIGN.md §2.10). В городе её нет:
+     токен объявлен, но ни один городской экран его не использует. */
+  --acid: #c8f53c;
+
+  /* Высота видимой области. Telegram отдаёт свою, браузер — свою (см. lib/telegram.ts). */
+  --tg-vh: 100dvh;
+}
+
+/* ---------- Акт II: лаборатория ---------- */
+[data-act='lab'] {
+  --color-ground: #0b0a06;
+  --color-ground-deep: #050403;
+  --color-panel: #16130b;
+  --color-raised: #221c10;
+  --color-line: #332a18;
+
+  --color-ink-2: #b0a489;
+  --color-ink-3: #7a6f58;
+  --color-cold: #c8f53c; /* холодный акцент акта: лаборатория — кислота */
+}

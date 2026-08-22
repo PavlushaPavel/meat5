@@ -1,0 +1,101 @@
+@import 'tailwindcss';
+@import './fonts.css';
+@import './tokens.css';
+
+/* Ночная сцена: фон держит и <html>, и <body> — иначе при оверскролле
+   в Telegram снизу выезжает белая полоса. */
+html,
+body {
+  background: var(--color-ground);
+  min-height: 100%;
+}
+
+/* У #root заливки быть НЕ должно: она рисуется поверх потомков с отрицательным
+   z-index и полностью съедает фоновые кадры сцен. Проверено скриншотом. */
+#root {
+  min-height: 100%;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 17px;
+  line-height: 1.55;
+  font-synthesis-weight: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
+  /* Смена акта — это смена света в сцене, а не мгновенный переключатель. */
+  transition: background-color var(--t-scene) var(--ease-e-inout);
+}
+
+/* Поверхности браузера тоже принадлежат дизайну (craft floor). */
+::selection {
+  background: var(--color-gold);
+  color: var(--color-ink-on-gold);
+}
+
+:where(a, button, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@utility display-xl {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(30px, 8.6vw, 42px);
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+}
+
+@utility display-m {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(21px, 5.8vw, 26px);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+@utility label-mono {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 1.2;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Кадр медленно дышит: сцена живая, но движение почти незаметно (DESIGN.md §6). */
+@keyframes breathe {
+  from {
+    transform: scale(1.04) translate3d(0, 0, 0);
+  }
+  to {
+    transform: scale(1.12) translate3d(0, -1.5%, 0);
+  }
+}

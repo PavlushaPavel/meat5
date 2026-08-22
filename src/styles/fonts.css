@@ -1,0 +1,4 @@
+/* Гарнитуры self-hosted: в Telegram нельзя рассчитывать на быструю загрузку с CDN. */
+@import '@fontsource-variable/unbounded/index.css';
+@import '@fontsource-variable/manrope/index.css';
+@import '@fontsource-variable/jetbrains-mono/index.css';
