@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'motion/react'
 import { Screen } from '../ui/Screen'
 import { Scene } from '../ui/Scene'
@@ -24,6 +24,28 @@ import { asset } from '../lib/asset'
 export function BundleScreen({ onNext }: { onNext: () => void }) {
   const { mark, result_site_opened } = useProgress()
   const [phase, setPhase] = useState<'assemble' | 'payoff'>(result_site_opened ? 'payoff' : 'assemble')
+  const [awaiting, setAwaiting] = useState(false)
+
+  /**
+   * §13 прототипа: человек СНАЧАЛА смотрит собранный сайт и только потом
+   * возвращается к обещанию. Поэтому payoff ждёт фактического возвращения во
+   * вкладку, а не срабатывает по клику. Telegram не всегда отдаёт это событие —
+   * поэтому рядом всегда есть ручная кнопка, и человек не может застрять.
+   */
+  useEffect(() => {
+    if (!awaiting) return
+    const back = () => {
+      if (document.visibilityState !== 'visible') return
+      setAwaiting(false)
+      setPhase('payoff')
+    }
+    document.addEventListener('visibilitychange', back)
+    window.addEventListener('focus', back)
+    return () => {
+      document.removeEventListener('visibilitychange', back)
+      window.removeEventListener('focus', back)
+    }
+  }, [awaiting])
 
   return (
     <Screen bare>
@@ -77,16 +99,26 @@ export function BundleScreen({ onNext }: { onNext: () => void }) {
 
       <BottomBar>
         {phase === 'assemble' ? (
-          <Button
-            onClick={() => {
-              track('demo_site_clicked')
-              mark('result_site_opened', true)
-              if (config.resultDemoUrl) openExternal(config.resultDemoUrl)
-              setPhase('payoff')
-            }}
-          >
-            Посмотреть результат
-          </Button>
+          awaiting ? (
+            <Button variant="secondary" onClick={() => setPhase('payoff')}>
+              Посмотрел — вернуться
+            </Button>
+          ) : (
+            <Button
+              onClick={() => {
+                track('demo_site_clicked')
+                mark('result_site_opened', true)
+                if (!config.resultDemoUrl) {
+                  setPhase('payoff')
+                  return
+                }
+                openExternal(config.resultDemoUrl)
+                setAwaiting(true)
+              }}
+            >
+              Посмотреть результат
+            </Button>
+          )
         ) : (
           <Button onClick={onNext}>Что дальше</Button>
         )}

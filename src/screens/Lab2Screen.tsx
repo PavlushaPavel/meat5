@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'motion/react'
 import { Screen } from '../ui/Screen'
 import { Scene } from '../ui/Scene'
@@ -8,10 +8,11 @@ import { VideoBlock } from '../ui/VideoBlock'
 import { Button } from '../ui/Button'
 import { BottomBar } from '../ui/BottomBar'
 import { NodeRail } from '../ui/NodeRail'
-import { AssistantCard } from '../ui/AssistantCard'
+import { RewardBlock } from '../ui/RewardBlock'
 import { BRIDGE2 } from '../content/script'
 import { config } from '../config'
 import { track } from '../lib/analytics'
+import { openExternal } from '../lib/telegram'
 import { useProgress } from '../store/progress'
 import { DUR, EASE_OUT } from '../lib/motion'
 import { asset } from '../lib/asset'
@@ -24,10 +25,18 @@ import { asset } from '../lib/asset'
  * реплик всего несколько.
  */
 export function Lab2Screen({ onNext }: { onNext: () => void }) {
-  const { mark, video_2_completed } = useProgress()
+  const { mark, video_2_completed, assistant_2_opened, review, clearReview } = useProgress()
+  const assistantReady = Boolean(config.assistant2Url)
+  const seekTo = review?.step === 'lab2' ? review.at : undefined
   const [phase, setPhase] = useState<'bridge' | 'video' | 'reward'>(
     video_2_completed ? 'reward' : 'bridge',
   )
+
+  useEffect(() => {
+    if (seekTo === undefined) return
+    setPhase('video')
+    return () => clearReview()
+  }, [seekTo, clearReview])
 
   return (
     <Screen bare>
@@ -62,6 +71,7 @@ export function Lab2Screen({ onNext }: { onNext: () => void }) {
                 video={config.videos.v2}
                 protocolNo="02"
                 title="Оффер и объявления"
+                seekTo={seekTo}
                 eventPrefix="video2"
                 onProgress={(share) => mark('video_2_progress', share)}
                 onCompleted={() => {
@@ -87,18 +97,14 @@ export function Lab2Screen({ onNext }: { onNext: () => void }) {
 
             <div className="flex-1" />
 
-            <div className="mt-sp4">
-              <AssistantCard
-                number="02"
-                title="Офферы и объявления"
-                hint="Работает на анализе из первого протокола"
-                url={config.assistant2Url}
-                onOpen={() => {
-                  track('assistant2_clicked')
-                  mark('assistant_2_opened', true)
-                }}
-              />
-            </div>
+            <RewardBlock
+              number="02"
+              title="Офферы и объявления"
+              hint="Работает на анализе из первого протокола: соберёт офферы, заголовки и объявления и покажет, из чего вырос каждый текст."
+              taken={assistant_2_opened}
+              ready={assistantReady}
+              className="mt-sp4"
+            />
           </>
         )}
       </div>
@@ -109,10 +115,23 @@ export function Lab2Screen({ onNext }: { onNext: () => void }) {
         )}
         {phase === 'video' && (
           <Button disabled={!video_2_completed} onClick={() => setPhase('reward')}>
-            {video_2_completed ? 'Забрать ассистента' : 'Сначала протокол 02'}
+            {video_2_completed ? 'Забрать награду' : 'Сначала протокол 02'}
           </Button>
         )}
-        {phase === 'reward' && <Button onClick={onNext}>Получить допуск</Button>}
+        {phase === 'reward' &&
+          (assistant_2_opened || !assistantReady ? (
+            <Button onClick={onNext}>Получить допуск</Button>
+          ) : (
+            <Button
+              onClick={() => {
+                track('assistant2_clicked')
+                mark('assistant_2_opened', true)
+                openExternal(config.assistant2Url)
+              }}
+            >
+              Забрать ассистента
+            </Button>
+          ))}
       </BottomBar>
     </Screen>
   )

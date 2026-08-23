@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'motion/react'
 import { Screen } from '../ui/Screen'
 import { Scene } from '../ui/Scene'
@@ -25,8 +25,15 @@ import { asset } from '../lib/asset'
  * экране в этот момент проявляется первый неизвестный элемент связки.
  */
 export function Lab1Screen({ onNext }: { onNext: () => void }) {
-  const { mark, video_1_completed } = useProgress()
+  const { mark, video_1_completed, review, clearReview } = useProgress()
+  const seekTo = review?.step === 'lab1' ? review.at : undefined
   const [phase, setPhase] = useState<'bridge' | 'video'>(video_1_completed ? 'video' : 'bridge')
+
+  useEffect(() => {
+    if (seekTo === undefined) return
+    setPhase('video')
+    return () => clearReview()
+  }, [seekTo, clearReview])
 
   return (
     <Screen bare>
@@ -53,6 +60,7 @@ export function Lab1Screen({ onNext }: { onNext: () => void }) {
                 video={config.videos.v1}
                 protocolNo="01"
                 title="Кому мы продаём"
+                seekTo={seekTo}
                 eventPrefix="video1"
                 onProgress={(share) => mark('video_1_progress', share)}
                 onCompleted={() => mark('video_1_completed', true)}
@@ -73,7 +81,7 @@ export function Lab1Screen({ onNext }: { onNext: () => void }) {
               onNext()
             }}
           >
-            {video_1_completed ? 'Забрать ассистента' : 'Сначала протокол 01'}
+            {video_1_completed ? 'Забрать награду' : 'Сначала протокол 01'}
           </Button>
         )}
       </BottomBar>

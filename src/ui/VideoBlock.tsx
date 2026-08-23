@@ -24,6 +24,7 @@ export function VideoBlock({
   eventPrefix,
   onProgress,
   onCompleted,
+  seekTo,
 }: {
   video: VideoConfig
   protocolNo: string
@@ -31,10 +32,26 @@ export function VideoBlock({
   eventPrefix: 'video1' | 'video2' | 'video3'
   onProgress?: (share: number) => void
   onCompleted: () => void
+  /** Секунда, с которой открыть протокол: приход по кнопке «пересмотреть момент». */
+  seekTo?: number
 }) {
   const ref = useRef<HTMLVideoElement>(null)
   const [started, setStarted] = useState(false)
   const hasVideo = Boolean(video.url)
+
+  // Человека прислали пересмотреть конкретный момент — открываем протокол
+  // сразу на нём, а не заставляем искать вручную.
+  useEffect(() => {
+    const el = ref.current
+    if (!el || !hasVideo || seekTo === undefined) return
+    const onReady = () => {
+      el.currentTime = seekTo
+      setStarted(true)
+      void el.play()
+    }
+    if (el.readyState >= 1) onReady()
+    else el.addEventListener('loadedmetadata', onReady, { once: true })
+  }, [hasVideo, seekTo])
 
   useEffect(() => {
     const el = ref.current

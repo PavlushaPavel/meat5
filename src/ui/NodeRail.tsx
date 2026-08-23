@@ -22,11 +22,20 @@ export function NodeRail({
   return (
     <div
       className={cn(
-        'flex items-stretch gap-sp1',
+        'relative flex items-stretch gap-sp1',
         onScene && 'rounded-panel bg-[color-mix(in_oklab,var(--color-ground-deep)_72%,transparent)] p-sp1 backdrop-blur-[2px]',
       )}
       aria-label="Собранная связка"
     >
+      {dramatic && NODES.every((_, i) => nodeState(i, step) === 'open') && (
+        <motion.span
+          aria-hidden
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: 1 }}
+          transition={{ duration: 0.8, ease: EASE_OUT, delay: NODES.length * 0.22 }}
+          className="pointer-events-none absolute inset-x-sp2 top-1/2 z-0 h-[2px] origin-left bg-[var(--acid)] opacity-70 motion-reduce:hidden"
+        />
+      )}
       {NODES.map((node, idx) => {
         const state = nodeState(idx, step)
         const open = state === 'open'
@@ -37,9 +46,9 @@ export function NodeRail({
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: DUR.scene, ease: EASE_OUT, delay: dramatic ? idx * 0.22 : 0 }}
             className={cn(
-              'flex min-w-0 flex-1 flex-col justify-between gap-sp1 rounded-chip border px-sp2 py-sp2',
+              'relative z-10 flex min-w-0 flex-1 flex-col justify-between gap-sp1 rounded-chip border px-sp2 py-sp2',
               'transition-colors duration-[var(--t-scene)]',
-              open && 'border-transparent bg-[color-mix(in_oklab,var(--acid)_16%,transparent)]',
+              open && 'border-transparent bg-[color-mix(in_oklab,var(--acid)_16%,var(--color-ground))]',
               state === 'current' && 'border-gold',
               state === 'closed' && 'border-line',
             )}

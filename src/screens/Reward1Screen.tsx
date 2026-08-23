@@ -5,9 +5,10 @@ import { Character } from '../ui/Character'
 import { Button } from '../ui/Button'
 import { BottomBar } from '../ui/BottomBar'
 import { NodeRail } from '../ui/NodeRail'
-import { AssistantCard } from '../ui/AssistantCard'
+import { RewardBlock } from '../ui/RewardBlock'
 import { config } from '../config'
 import { track } from '../lib/analytics'
+import { openExternal } from '../lib/telegram'
 import { useProgress } from '../store/progress'
 import { DUR, EASE_OUT } from '../lib/motion'
 import { asset } from '../lib/asset'
@@ -15,27 +16,21 @@ import { asset } from '../lib/asset'
 /**
  * Экран 3. Награда после протокола 01.
  *
- * Инструмент отдаём здесь и сейчас, а не обещаем в конце курса: человек уже
- * что-то получил, и это меняет всё дальнейшее чтение воронки.
+ * Главное действие здесь — ЗАБРАТЬ ИНСТРУМЕНТ, и только после этого «идти
+ * дальше» (§4, §22 прототипа). Инструмент отдают сразу, а не обещают в конце
+ * курса: человек уже что-то получил, и дальше он читает воронку иначе.
  */
 export function Reward1Screen({ onNext }: { onNext: () => void }) {
-  const mark = useProgress((s) => s.mark)
+  const { mark, assistant_1_opened } = useProgress()
+  const ready = Boolean(config.assistant1Url)
 
   return (
     <Screen bare>
       <Scene src={asset('world/offer-bench.webp')} still />
-      <Character pose="calm" side="right" height="44vh" delay={0.35} />
+      <Character pose="calm" side="right" height="34vh" delay={0.35} />
 
       <div className="relative z-20 flex flex-1 flex-col px-[var(--gutter)] pt-sp6 pb-sp2">
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: DUR.ui, ease: EASE_OUT }}
-          className="label-mono text-[var(--acid)]"
-        >
-          получено
-        </motion.p>
-
+        <p className="label-mono text-[var(--acid)]">получено</p>
         <motion.h1
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -47,34 +42,36 @@ export function Reward1Screen({ onNext }: { onNext: () => void }) {
           аудитории
         </motion.h1>
 
-        <div className="mt-sp5">
-          <NodeRail step="reward1" dramatic />
+        <div className="mt-sp4">
+          <NodeRail step="reward1" dramatic onScene />
         </div>
 
-        <p className="on-scene mt-sp5 max-w-[34ch] text-[16px] leading-relaxed text-ink">
-          Первый модуль лаборатории загорелся. Дальше — инструмент, который делает эту работу
-          за тебя.
-        </p>
-
-        {/* Распорка: карточка прижата к низу, чтобы не закрывать лицо ведущего. */}
         <div className="flex-1" />
 
-        <div className="mt-sp4">
-          <AssistantCard
-            number="01"
-            title="Разбор аудитории"
-            hint="Попробуй прямо сейчас на своём проекте"
-            url={config.assistant1Url}
-            onOpen={() => {
-              track('assistant1_clicked')
-              mark('assistant_1_opened', true)
-            }}
-          />
-        </div>
+        <RewardBlock
+          number="01"
+          title="Разбор аудитории"
+          hint="Попробуй прямо сейчас на своём проекте: он соберёт ситуации покупки, барьеры и антиперсон, а решать, что забрать в работу, будешь ты."
+          taken={assistant_1_opened}
+          ready={ready}
+          className="mt-sp4"
+        />
       </div>
 
       <BottomBar>
-        <Button onClick={onNext}>Идти дальше</Button>
+        {assistant_1_opened || !ready ? (
+          <Button onClick={onNext}>Идти дальше</Button>
+        ) : (
+          <Button
+            onClick={() => {
+              track('assistant1_clicked')
+              mark('assistant_1_opened', true)
+              openExternal(config.assistant1Url)
+            }}
+          >
+            Забрать ассистента
+          </Button>
+        )}
       </BottomBar>
     </Screen>
   )

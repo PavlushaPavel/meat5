@@ -11,6 +11,7 @@ import { QUIZ } from '../content/quiz'
 import { track } from '../lib/analytics'
 import { hapticNotify } from '../lib/telegram'
 import { useProgress, QUIZ_LENGTH, QUIZ_LIVES } from '../store/progress'
+import { config } from '../config'
 
 const QUIZ_LIVES_LABEL = QUIZ_LIVES
 import { DUR, EASE_OUT } from '../lib/motion'
@@ -28,7 +29,18 @@ type Phase = 'barrier' | 'quiz' | 'failed' | 'passed'
  * моменты для пересмотра. Никакого «пересмотрите весь курс».
  */
 export function AccessScreen({ onNext }: { onNext: () => void }) {
-  const { quiz_lives, missed, loseLife, resetQuiz, mark } = useProgress()
+  const { quiz_lives, missed, loseLife, resetQuiz, mark, sendToReview } = useProgress()
+
+  /** Момент живёт внутри протокола: первый — про аудиторию, второй — про предложение. */
+  const reviewTarget = (protocol: 1 | 2) =>
+    protocol === 1
+      ? { step: 'lab1' as const, video: config.videos.v1 }
+      : { step: 'lab2' as const, video: config.videos.v2 }
+
+  const secondsOf = (moment: string) => {
+    const [m, sec] = moment.split(':').map(Number)
+    return m * 60 + (sec || 0)
+  }
   const [phase, setPhase] = useState<Phase>('barrier')
   const [index, setIndex] = useState(0)
   const [picked, setPicked] = useState<number | null>(null)
@@ -169,11 +181,22 @@ export function AccessScreen({ onNext }: { onNext: () => void }) {
                     className="mt-sp4 rounded-panel border border-line bg-panel p-sp3"
                   >
                     <p className="text-[15px] leading-relaxed text-ink-2">{question.explain}</p>
-                    {picked !== question.correct && (
-                      <p className="label-mono mt-sp2 text-gold">
-                        пересмотреть момент {question.moment}
-                      </p>
-                    )}
+                    {picked !== question.correct &&
+                      (reviewTarget(question.protocol).video.url ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            sendToReview(reviewTarget(question.protocol).step, secondsOf(question.moment))
+                          }
+                          className="label-mono mt-sp3 cursor-pointer rounded-chip border border-gold px-sp2 py-[8px] text-gold transition-transform duration-[var(--t-press)] ease-e-out active:scale-[0.97]"
+                        >
+                          пересмотреть момент {question.moment}
+                        </button>
+                      ) : (
+                        <p className="label-mono mt-sp2 text-gold">
+                          момент {question.moment} — вернёмся к нему, когда протокол будет подключён
+                        </p>
+                      ))}
                   </motion.div>
                 )}
               </motion.div>
@@ -190,12 +213,29 @@ export function AccessScreen({ onNext }: { onNext: () => void }) {
               Доступ к последнему протоколу пока закрыт.
             </p>
             <ul className="mt-sp4 flex flex-col gap-sp2">
-              {missed.map((moment) => (
-                <li key={moment} className="label-mono flex items-center gap-sp2 text-gold">
-                  <span aria-hidden className="h-px w-6 bg-gold" />
-                  момент {moment}
-                </li>
-              ))}
+              {missed.map((moment) => {
+                const q = QUIZ.find((item) => item.moment === moment)
+                const target = reviewTarget(q?.protocol ?? 1)
+                return (
+                  <li key={moment}>
+                    {target.video.url ? (
+                      <button
+                        type="button"
+                        onClick={() => sendToReview(target.step, secondsOf(moment))}
+                        className="label-mono flex w-full cursor-pointer items-center gap-sp2 rounded-chip border border-line px-sp2 py-[10px] text-left text-gold"
+                      >
+                        <span aria-hidden className="h-px w-5 bg-gold" />
+                        пересмотреть момент {moment}
+                      </button>
+                    ) : (
+                      <span className="label-mono flex items-center gap-sp2 text-gold">
+                        <span aria-hidden className="h-px w-6 bg-gold" />
+                        момент {moment}
+                      </span>
+                    )}
+                  </li>
+                )
+              })}
             </ul>
           </div>
         )}

@@ -36,9 +36,13 @@ export interface ProgressState {
 
   /** Таймкоды моментов, на которых человек ошибся: их предлагаем пересмотреть. */
   missed: string[]
+  /** Куда и на какую секунду вернуть человека по кнопке «пересмотреть момент». */
+  review: { step: StepId; at: number } | null
   timestamps: Partial<Record<string, number>>
 
   go: (step: StepId) => void
+  sendToReview: (step: StepId, at: number) => void
+  clearReview: () => void
   mark: <K extends keyof ProgressState>(key: K, value: ProgressState[K]) => void
   loseLife: (moment: string) => void
   resetQuiz: () => void
@@ -64,6 +68,7 @@ const initial = {
   checkout_started: false,
   purchased: false,
   missed: [] as string[],
+  review: null as { step: StepId; at: number } | null,
   timestamps: {} as Partial<Record<string, number>>,
 }
 
@@ -74,6 +79,11 @@ export const useProgress = create<ProgressState>()(
 
       go: (step) =>
         set((s) => ({ step, timestamps: { ...s.timestamps, [`step_${step}`]: Date.now() } })),
+
+      sendToReview: (step, at) =>
+        set({ review: { step, at }, step }),
+
+      clearReview: () => set({ review: null }),
 
       mark: (key, value) =>
         set((s) => ({ ...s, [key]: value, timestamps: { ...s.timestamps, [String(key)]: Date.now() } })),
