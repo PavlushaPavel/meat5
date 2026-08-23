@@ -46,6 +46,7 @@
   --radius-chip: 8px;
   --radius-panel: 18px;
   --radius-card: 22px;
+  --radius-pill: 999px;
 
   /* ---------- §6 Мотион ---------- */
   --ease-e-out: cubic-bezier(0.23, 1, 0.32, 1);

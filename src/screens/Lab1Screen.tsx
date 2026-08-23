@@ -3,11 +3,14 @@ import { motion } from 'motion/react'
 import { Screen } from '../ui/Screen'
 import { Scene } from '../ui/Scene'
 import { Subtitles } from '../ui/Subtitles'
+import { VoiceBar } from '../ui/VoiceBar'
+import { Character } from '../ui/Character'
 import { VideoBlock } from '../ui/VideoBlock'
 import { Button } from '../ui/Button'
 import { BottomBar } from '../ui/BottomBar'
 import { LAB1_SCRIPT } from '../content/script'
 import { config } from '../config'
+import { useVoice } from '../lib/useVoice'
 import { track } from '../lib/analytics'
 import { useProgress } from '../store/progress'
 import { DUR, EASE_OUT } from '../lib/motion'
@@ -17,37 +20,44 @@ import { asset } from '../lib/asset'
  * Экран 2. Первый эксперимент.
  *
  * ДОРОГОЙ МОУШН №2: створки расходятся, жёлтый свет заливает кадр. Открытие
- * города здесь НЕ повторяем — двери уже открылись, человек внутри.
+ * города здесь НЕ повторяем — двери уже открылись, человек внутри. Ведущий
+ * встречает его на переднем плане и говорит голосом.
  */
 export function Lab1Screen({ onNext }: { onNext: () => void }) {
   const { mark, video_1_completed } = useProgress()
+  const voice = useVoice(LAB1_SCRIPT, config.voice.lab1 || undefined)
   const [phase, setPhase] = useState<'intro' | 'video'>(video_1_completed ? 'video' : 'intro')
+  const introDone = voice.done || phase === 'video'
 
   return (
     <Screen bare>
       <Scene src={asset('world/lab-interior.webp')} still />
-      {/* Створки: расходятся один раз, на входе в лабораторию. */}
       <Doors />
+      {!introDone && <Character height="56vh" side="right" delay={0.9} />}
 
-      <div className="relative z-10 flex flex-1 flex-col px-[var(--gutter)] pt-sp6">
+      <div className="relative z-20 flex flex-1 flex-col px-[var(--gutter)] pt-sp5">
         <motion.h1
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: DUR.scene, ease: EASE_OUT, delay: 0.5 }}
-          className="display-m text-ink"
+          className="display-m max-w-[12ch] text-ink [text-shadow:0_4px_36px_rgba(2,6,14,0.9)]"
         >
-          Элемент первый:
-          <br />
-          кому мы продаём
+          Элемент первый: кому мы продаём
         </motion.h1>
 
-        {phase === 'intro' ? (
-          <Subtitles
-            lines={LAB1_SCRIPT}
-            running
-            onDone={() => setPhase('video')}
-            className="mt-sp5 flex-1"
-          />
+        {!introDone ? (
+          <>
+            <div className="flex-1" />
+            <Subtitles line={voice.started ? voice.line : undefined} className="mb-sp4" />
+            <VoiceBar
+              playing={voice.playing}
+              progress={voice.progress}
+              elapsed={voice.elapsed}
+              duration={voice.duration}
+              onToggle={voice.toggle}
+              className="mb-sp4"
+            />
+          </>
         ) : (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -68,8 +78,14 @@ export function Lab1Screen({ onNext }: { onNext: () => void }) {
       </div>
 
       <BottomBar>
-        {phase === 'intro' ? (
-          <Button variant="ghost" onClick={() => setPhase('video')}>
+        {!introDone ? (
+          <Button
+            variant="ghost"
+            onClick={() => {
+              voice.finish()
+              setPhase('video')
+            }}
+          >
             Пропустить
           </Button>
         ) : (
@@ -101,7 +117,10 @@ function Doors() {
           className="absolute top-0 h-full w-1/2 bg-ground-deep motion-reduce:hidden"
           style={{
             [side]: 0,
-            boxShadow: side === 'left' ? '8px 0 60px -10px rgba(249,183,6,0.35)' : '-8px 0 60px -10px rgba(249,183,6,0.35)',
+            boxShadow:
+              side === 'left'
+                ? '8px 0 60px -10px rgba(249,183,6,0.35)'
+                : '-8px 0 60px -10px rgba(249,183,6,0.35)',
           }}
         />
       ))}

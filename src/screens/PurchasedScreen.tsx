@@ -40,13 +40,13 @@ export function PurchasedScreen() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: DUR.scene, ease: EASE_OUT, delay: 0.1 }}
-          className="display-xl mt-sp2 text-ink"
+          className="display-xl on-scene mt-sp2 text-ink"
         >
           Сектор
           <br />
           открыт
         </motion.h1>
-        <p className="mt-sp4 max-w-[38ch] text-[16px] leading-relaxed text-ink-2">
+        <p className="on-scene mt-sp4 max-w-[38ch] text-[16px] leading-relaxed text-ink-2">
           Практикум ждёт внутри. Первый шаг — собрать структуру под свою гипотезу.
         </p>
       </div>

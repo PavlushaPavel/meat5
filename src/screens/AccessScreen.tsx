@@ -3,6 +3,10 @@ import { motion, AnimatePresence } from 'motion/react'
 import { Screen } from '../ui/Screen'
 import { Scene } from '../ui/Scene'
 import { Subtitles } from '../ui/Subtitles'
+import { VoiceBar } from '../ui/VoiceBar'
+import { Character } from '../ui/Character'
+import { useVoice } from '../lib/useVoice'
+import { config } from '../config'
 import { Button } from '../ui/Button'
 import { BottomBar } from '../ui/BottomBar'
 import { Lives } from '../ui/Lives'
@@ -27,6 +31,7 @@ type Phase = 'barrier' | 'quiz' | 'failed' | 'passed'
  */
 export function AccessScreen({ onNext }: { onNext: () => void }) {
   const { quiz_lives, missed, loseLife, resetQuiz, mark } = useProgress()
+  const voice = useVoice(BARRIER_SCRIPT, config.voice.barrier || undefined)
   const [phase, setPhase] = useState<Phase>('barrier')
   const [index, setIndex] = useState(0)
   const [picked, setPicked] = useState<number | null>(null)
@@ -67,18 +72,35 @@ export function AccessScreen({ onNext }: { onNext: () => void }) {
   return (
     <Screen bare>
       <Scene src={asset('world/access-door.webp')} still />
+      {phase === 'barrier' && <Character height="50vh" side="left" delay={0.2} />}
 
-      <div className="relative z-10 flex flex-1 flex-col px-[var(--gutter)] pt-sp6">
+      <div className="relative z-20 flex flex-1 flex-col px-[var(--gutter)] pt-sp6">
         {phase === 'barrier' && (
           <>
             <p className="label-mono text-alert">доступ закрыт</p>
-            <h1 className="display-m mt-sp2 text-ink">Допуск в лабораторию</h1>
-            <Subtitles lines={BARRIER_SCRIPT} running onDone={() => {}} className="mt-sp5 flex-1" />
-            <div className="mt-sp4 mb-sp5 flex items-center gap-sp4">
-              <span className="label-mono text-ink-2">{QUIZ_LENGTH} вопросов</span>
-              <span aria-hidden className="h-3 w-px bg-line" />
-              <span className="label-mono text-ink-2">5 жизней</span>
+            <h1 className="display-m mt-sp2 max-w-[11ch] text-ink [text-shadow:0_4px_36px_rgba(2,6,14,0.9)]">
+              Допуск в лабораторию
+            </h1>
+            <div className="flex-1" />
+            <Subtitles line={voice.started ? voice.line : undefined} className="mb-sp4" />
+            <div className="mb-sp3 flex items-center gap-sp2">
+              {[`${QUIZ_LENGTH} вопросов`, '5 жизней'].map((chip) => (
+                <span
+                  key={chip}
+                  className="label-mono rounded-pill border border-line bg-[color-mix(in_oklab,var(--color-ground-deep)_82%,transparent)] px-sp2 py-[6px] text-ink backdrop-blur-[4px]"
+                >
+                  {chip}
+                </span>
+              ))}
             </div>
+            <VoiceBar
+              playing={voice.playing}
+              progress={voice.progress}
+              elapsed={voice.elapsed}
+              duration={voice.duration}
+              onToggle={voice.toggle}
+              className="mb-sp4"
+            />
           </>
         )}
 
@@ -172,6 +194,7 @@ export function AccessScreen({ onNext }: { onNext: () => void }) {
         {phase === 'barrier' && (
           <Button
             onClick={() => {
+              voice.finish()
               track('quiz_started')
               setPhase('quiz')
             }}

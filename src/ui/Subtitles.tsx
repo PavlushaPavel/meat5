@@ -1,63 +1,53 @@
-import { useEffect, useRef, useState } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
+import { AnimatePresence, motion } from 'motion/react'
 import type { Line } from '../content/script'
-import { DUR, EASE_OUT, prefersReducedMotion } from '../lib/motion'
+import { DUR, EASE_OUT } from '../lib/motion'
 import { cn } from '../lib/cn'
 
 /**
- * Голосовая сцена с крупными субтитрами.
+ * Субтитры сцены.
  *
- * Человек ничего не нажимает каждые пять секунд: сцена идёт сама. Запускается
- * только по действию — автоплей со звуком запрещён (DESIGN.md §2.12) и всё равно
- * заблокирован браузерами.
- *
- * `onBeat` дёргается на репликах-поворотах: кадр в этот момент меняет план.
+ * Крупные и поверх кадра — включая персонажа. Перекрытие здесь приём, а не дефект:
+ * так это и работает в кино. Читаемость держим не отступами, а собственной
+ * подложкой и тенью текста, чтобы буквы не растворялись в светящемся городе.
  */
 export function Subtitles({
-  lines,
-  running,
-  onBeat,
-  onDone,
+  line,
+  hint,
   className,
 }: {
-  lines: Line[]
-  running: boolean
-  onBeat?: (index: number) => void
-  onDone: () => void
+  line?: Line
+  /** Подсказка до старта голоса: та же подложка, тише голосом. */
+  hint?: string
   className?: string
 }) {
-  const [i, setI] = useState(0)
-  const timer = useRef<number | undefined>(undefined)
-  const beatRef = useRef(onBeat)
-  beatRef.current = onBeat
-
-  useEffect(() => {
-    if (!running) return
-    const line = lines[i]
-    if (!line) return
-    if (line.beat) beatRef.current?.(i)
-    // При reduced-motion реплики держатся дольше: движения нет, читать придётся глазами.
-    const hold = prefersReducedMotion() ? line.hold * 1.25 : line.hold
-    timer.current = window.setTimeout(() => {
-      if (i + 1 >= lines.length) onDone()
-      else setI(i + 1)
-    }, hold)
-    return () => window.clearTimeout(timer.current)
-  }, [i, running, lines, onDone])
-
-  const line = lines[i]
-
   return (
-    <div className={cn('flex min-h-[132px] items-end', className)}>
+    <div className={cn('relative', className)}>
+      {/* Подложка под текстом: мягкое затемнение ровно под блоком реплики. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -inset-x-[var(--gutter)] -top-sp6 -bottom-sp5"
+        style={{
+          background:
+            'linear-gradient(to bottom, transparent 0%, color-mix(in oklab, var(--color-ground-deep) 72%, transparent) 34%, color-mix(in oklab, var(--color-ground-deep) 86%, transparent) 100%)',
+        }}
+      />
+      {!line && hint && (
+        <p className="relative max-w-[26ch] text-[19px] leading-snug font-medium text-ink [text-shadow:0_2px_24px_rgba(2,6,14,0.95)]">
+          {hint}
+        </p>
+      )}
       <AnimatePresence mode="wait">
-        {running && line && (
+        {line && (
           <motion.p
-            key={i}
-            initial={{ opacity: 0, y: 10, filter: 'blur(6px)' }}
+            key={line.text}
+            initial={{ opacity: 0, y: 14, filter: 'blur(8px)' }}
             animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-            exit={{ opacity: 0, y: -6, filter: 'blur(4px)', transition: { duration: 0.14 } }}
+            exit={{ opacity: 0, y: -8, filter: 'blur(5px)', transition: { duration: 0.15 } }}
             transition={{ duration: DUR.ui, ease: EASE_OUT }}
-            className="text-balance text-[19px] leading-[1.4] font-medium text-ink [text-shadow:0_2px_18px_rgba(2,6,14,0.85)]"
+            className={cn(
+              'relative text-balance text-[24px] leading-[1.24] font-semibold tracking-[-0.01em] text-ink',
+              '[text-shadow:0_2px_28px_rgba(2,6,14,0.95),0_0_2px_rgba(2,6,14,0.9)]',
+            )}
           >
             {line.text}
           </motion.p>

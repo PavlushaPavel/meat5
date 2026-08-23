@@ -3,6 +3,8 @@ import { motion } from 'motion/react'
 import { Screen } from '../ui/Screen'
 import { Scene } from '../ui/Scene'
 import { Subtitles } from '../ui/Subtitles'
+import { VoiceBar } from '../ui/VoiceBar'
+import { useVoice } from '../lib/useVoice'
 import { VideoBlock } from '../ui/VideoBlock'
 import { Button } from '../ui/Button'
 import { BottomBar } from '../ui/BottomBar'
@@ -24,6 +26,7 @@ import { asset } from '../lib/asset'
  */
 export function Lab2Screen({ onNext }: { onNext: () => void }) {
   const { mark, video_2_completed } = useProgress()
+  const voice = useVoice(BRIDGE2_SCRIPT, config.voice.bridge2 || undefined)
   const [phase, setPhase] = useState<'bridge' | 'video' | 'reward'>(
     video_2_completed ? 'reward' : 'bridge',
   )
@@ -32,7 +35,7 @@ export function Lab2Screen({ onNext }: { onNext: () => void }) {
     <Screen bare>
       <Scene src={asset('world/offer-bench.webp')} still />
 
-      <div className="relative z-10 flex flex-1 flex-col px-[var(--gutter)] pt-sp6">
+      <div className="relative z-20 flex flex-1 flex-col px-[var(--gutter)] pt-sp6">
         {phase === 'bridge' && (
           <>
             <div className="flex items-center gap-sp2">
@@ -40,11 +43,15 @@ export function Lab2Screen({ onNext }: { onNext: () => void }) {
               <span aria-hidden className="h-px flex-1 bg-line" />
               <span className="label-mono text-ink-3">???</span>
             </div>
-            <Subtitles
-              lines={BRIDGE2_SCRIPT}
-              running
-              onDone={() => setPhase('video')}
-              className="mt-sp6 flex-1"
+            <div className="flex-1" />
+            <Subtitles line={voice.started ? voice.line : undefined} className="mb-sp4" />
+            <VoiceBar
+              playing={voice.playing}
+              progress={voice.progress}
+              elapsed={voice.elapsed}
+              duration={voice.duration}
+              onToggle={voice.toggle}
+              className="mb-sp4"
             />
           </>
         )}
@@ -55,7 +62,7 @@ export function Lab2Screen({ onNext }: { onNext: () => void }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: DUR.ui, ease: EASE_OUT }}
           >
-            <h1 className="display-m text-ink">
+            <h1 className="display-m on-scene text-ink">
               Элемент второй:
               <br />
               что ему сказать
@@ -79,7 +86,7 @@ export function Lab2Screen({ onNext }: { onNext: () => void }) {
         {phase === 'reward' && (
           <>
             <p className="label-mono text-[var(--acid)]">получено</p>
-            <h1 className="display-xl mt-sp2 text-ink">Предложение</h1>
+            <h1 className="display-xl on-scene mt-sp2 text-ink">Предложение</h1>
             <div className="mt-sp5">
               <NodeRail step="lab2" dramatic />
             </div>
@@ -95,7 +102,7 @@ export function Lab2Screen({ onNext }: { onNext: () => void }) {
                 }}
               />
             </div>
-            <p className="mt-sp4 max-w-[40ch] text-[16px] leading-relaxed text-ink-2">
+            <p className="on-scene mt-sp4 max-w-[40ch] text-[16px] leading-relaxed text-ink">
               Теперь у тебя два рабочих инструмента. Осталось довести гипотезу до того, что человек
               увидит после клика.
             </p>
@@ -105,7 +112,14 @@ export function Lab2Screen({ onNext }: { onNext: () => void }) {
 
       <BottomBar>
         {phase === 'bridge' && (
-          <Button onClick={() => setPhase('video')}>Превратить это в предложение</Button>
+          <Button
+            onClick={() => {
+              voice.finish()
+              setPhase('video')
+            }}
+          >
+            Превратить это в предложение
+          </Button>
         )}
         {phase === 'video' && (
           <Button disabled={!video_2_completed} onClick={() => setPhase('reward')}>

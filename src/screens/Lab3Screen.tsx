@@ -3,6 +3,9 @@ import { motion } from 'motion/react'
 import { Screen } from '../ui/Screen'
 import { Scene } from '../ui/Scene'
 import { Subtitles } from '../ui/Subtitles'
+import { VoiceBar } from '../ui/VoiceBar'
+import { Character } from '../ui/Character'
+import { useVoice } from '../lib/useVoice'
 import { VideoBlock } from '../ui/VideoBlock'
 import { Button } from '../ui/Button'
 import { BottomBar } from '../ui/BottomBar'
@@ -15,21 +18,34 @@ import { asset } from '../lib/asset'
 /** Экран 6. Последняя лаборатория: производство посадочной страницы. */
 export function Lab3Screen({ onNext }: { onNext: () => void }) {
   const { mark, video_3_completed } = useProgress()
+  const voice = useVoice(LAB3_SCRIPT, config.voice.lab3 || undefined)
   const [phase, setPhase] = useState<'intro' | 'video'>(video_3_completed ? 'video' : 'intro')
 
   return (
     <Screen bare>
       <Scene src={asset('world/assembly.webp')} still />
+      {phase === 'intro' && <Character height="52vh" side="left" delay={0.2} />}
 
-      <div className="relative z-10 flex flex-1 flex-col px-[var(--gutter)] pt-sp6">
-        <h1 className="display-m text-ink">
+      <div className="relative z-20 flex flex-1 flex-col px-[var(--gutter)] pt-sp6">
+        <h1 className="display-m max-w-[12ch] text-ink [text-shadow:0_4px_36px_rgba(2,6,14,0.9)]">
           Элемент третий:
           <br />
           куда его вести
         </h1>
 
         {phase === 'intro' ? (
-          <Subtitles lines={LAB3_SCRIPT} running onDone={() => setPhase('video')} className="mt-sp5 flex-1" />
+          <>
+            <div className="flex-1" />
+            <Subtitles line={voice.started ? voice.line : undefined} className="mb-sp4" />
+            <VoiceBar
+              playing={voice.playing}
+              progress={voice.progress}
+              elapsed={voice.elapsed}
+              duration={voice.duration}
+              onToggle={voice.toggle}
+              className="mb-sp4"
+            />
+          </>
         ) : (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -45,7 +61,7 @@ export function Lab3Screen({ onNext }: { onNext: () => void }) {
               onProgress={(share) => mark('video_3_progress', share)}
               onCompleted={() => mark('video_3_completed', true)}
             />
-            <p className="mt-sp4 max-w-[40ch] text-[16px] leading-relaxed text-ink-2">
+            <p className="on-scene mt-sp4 max-w-[40ch] text-[16px] leading-relaxed text-ink">
               Нам нужен не макет. Нам нужен инструмент, на который можно привести трафик.
             </p>
           </motion.div>
@@ -54,7 +70,13 @@ export function Lab3Screen({ onNext }: { onNext: () => void }) {
 
       <BottomBar>
         {phase === 'intro' ? (
-          <Button variant="ghost" onClick={() => setPhase('video')}>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              voice.finish()
+              setPhase('video')
+            }}
+          >
             Пропустить
           </Button>
         ) : (

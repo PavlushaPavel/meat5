@@ -19,8 +19,19 @@ export interface VideoConfig {
 }
 
 export const config = {
-  /** Экран 1: город. Голос поверх сцены. */
-  cityVoiceUrl: '',
+  /**
+   * Голосовые сцены. Пока файла нет, сцена идёт по таймингам из content/script.ts
+   * и play работает — человек всё равно проходит воронку. Появится озвучка —
+   * тайминги растянутся под реальную длительность файла.
+   */
+  voice: {
+    city: '',
+    lab1: '',
+    bridge2: '',
+    barrier: '',
+    lab3: '',
+    bundle: '',
+  },
 
   videos: {
     v1: { url: '', duration: 0, poster: 'world/lab-interior.webp' } satisfies VideoConfig,

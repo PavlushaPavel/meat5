@@ -26,9 +26,14 @@ const done = {
   result_site_opened: true,
 }
 
+/** Голосовые сцены снимаем дважды: до нажатия play и во время реплики. */
+const PLAY = 'button[aria-label="Слушать"]'
+
 const STATES = [
   ['1-city', { step: 'city' }],
+  ['1b-city-voice', { step: 'city' }, PLAY],
   ['2-lab1', { step: 'lab1', ...done }],
+  ['2b-lab1-voice', { step: 'lab1', ...done, video_1_completed: false }, PLAY],
   ['3-reward1', { step: 'reward1', ...done }],
   ['4-lab2', { step: 'lab2', ...done }],
   ['5-access', { step: 'access', ...done, quiz_completed: false }],
@@ -42,7 +47,7 @@ await mkdir(OUT, { recursive: true })
 const browser = await chromium.launch()
 const problems = []
 
-for (const [name, state] of STATES) {
+for (const [name, state, action] of STATES) {
   const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: 2 })
   await context.addInitScript((s) => {
     localStorage.setItem('traffic-city-progress', JSON.stringify({ state: s, version: 1 }))
@@ -51,6 +56,10 @@ for (const [name, state] of STATES) {
   await page.goto(BASE, { waitUntil: 'networkidle' })
   // Сцены анимированы: даём кадру доиграть вход, иначе снимем полупрозрачное состояние.
   await page.waitForTimeout(1800)
+  if (action) {
+    await page.click(action)
+    await page.waitForTimeout(2200)
+  }
   await page.screenshot({ path: `${OUT}/${name}.png`, fullPage: false })
   // Длинные экраны честно проверяем в самом низу: под кнопкой не должен остаться
   // запертым последний блок. В начале скролла контент под панелью — это норма.

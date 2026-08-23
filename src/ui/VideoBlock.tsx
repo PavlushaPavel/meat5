@@ -108,9 +108,9 @@ export function VideoBlock({
         )}
       </div>
 
-      <figcaption className="mt-sp2 flex items-baseline justify-between gap-sp2 [text-shadow:0_1px_10px_var(--color-ground-deep)]">
-        <span className="label-mono text-ink-3">протокол {protocolNo}</span>
-        <span className="label-mono text-ink-3">
+      <figcaption className="mt-sp2 flex items-baseline justify-between gap-sp2 [text-shadow:0_2px_16px_rgba(2,6,14,0.95),0_0_2px_rgba(2,6,14,0.9)]">
+        <span className="label-mono text-ink-2">протокол {protocolNo}</span>
+        <span className="label-mono text-ink-2">
           {hasVideo ? (video.duration ? formatDuration(video.duration) : '--:--') : 'материал будет здесь'}
         </span>
       </figcaption>
