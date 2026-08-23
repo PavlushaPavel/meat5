@@ -76,14 +76,28 @@ export function VideoBlock({
             className="h-full w-full object-cover"
           />
         ) : (
-          <div
-            aria-hidden
-            className="absolute inset-0 opacity-[0.5]"
-            style={{
-              backgroundImage:
-                'repeating-linear-gradient(135deg, color-mix(in oklab, var(--color-line) 55%, transparent) 0 1px, transparent 1px 9px)',
-            }}
-          />
+          <>
+            <img
+              src={asset(video.poster)}
+              alt=""
+              aria-hidden
+              loading="lazy"
+              className="absolute inset-0 h-full w-full object-cover opacity-40 grayscale-[0.3]"
+            />
+            <div
+              aria-hidden
+              className="absolute inset-0"
+              style={{ background: 'color-mix(in oklab, var(--color-ground-deep) 62%, transparent)' }}
+            />
+            <div
+              aria-hidden
+              className="absolute inset-x-0 bottom-0 h-[6px] opacity-70"
+              style={{
+                backgroundImage:
+                  'repeating-linear-gradient(-45deg, var(--color-gold) 0 8px, transparent 8px 16px)',
+              }}
+            />
+          </>
         )}
 
         {!started && (

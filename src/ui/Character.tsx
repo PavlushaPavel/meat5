@@ -17,18 +17,21 @@ export function Character({
   side = 'right',
   height = '62vh',
   delay = 0,
+  pose = 'point',
 }: {
   className?: string
   side?: 'left' | 'right'
   height?: string
   delay?: number
+  /** point — указывает и говорит; calm — с ноутбуком, когда отдаёт инструмент. */
+  pose?: 'point' | 'calm'
 }) {
   return (
     // Клип-слой: фигура намеренно уходит за край кадра, но страница от этого
     // не должна получать горизонтальный скролл.
     <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden">
       <motion.img
-        src={asset('world/character-hero.webp')}
+        src={asset(pose === 'calm' ? 'world/character-calm.webp' : 'world/character-hero.webp')}
         alt=""
         aria-hidden
         initial={{ opacity: 0, y: 28, scale: 1.02 }}

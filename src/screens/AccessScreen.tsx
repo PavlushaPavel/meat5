@@ -73,6 +73,13 @@ export function AccessScreen({ onNext }: { onNext: () => void }) {
     <Screen bare>
       <Scene src={asset('world/access-door.webp')} still />
       {phase === 'barrier' && <Character height="50vh" side="left" delay={0.2} />}
+      {(phase === 'quiz' || phase === 'failed') && (
+        <div
+          aria-hidden
+          className="absolute inset-0 z-10"
+          style={{ background: 'color-mix(in oklab, var(--color-ground) 82%, transparent)' }}
+        />
+      )}
 
       <div className="relative z-20 flex flex-1 flex-col px-[var(--gutter)] pt-sp6">
         {phase === 'barrier' && (
@@ -113,6 +120,7 @@ export function AccessScreen({ onNext }: { onNext: () => void }) {
               <Lives left={quiz_lives} />
             </div>
 
+            <div className="flex flex-1 flex-col justify-center">
             <AnimatePresence mode="wait">
               <motion.div
                 key={index}
@@ -166,6 +174,7 @@ export function AccessScreen({ onNext }: { onNext: () => void }) {
                 )}
               </motion.div>
             </AnimatePresence>
+            </div>
           </>
         )}
 

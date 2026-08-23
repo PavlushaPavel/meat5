@@ -37,6 +37,7 @@ const STATES = [
   ['3-reward1', { step: 'reward1', ...done }],
   ['4-lab2', { step: 'lab2', ...done }],
   ['5-access', { step: 'access', ...done, quiz_completed: false }],
+  ['5b-quiz', { step: 'access', ...done, quiz_completed: false }, 'button:has-text("Получить допуск")'],
   ['6-lab3', { step: 'lab3', ...done }],
   ['7-bundle', { step: 'bundle', ...done, result_site_opened: false }],
   ['8-offer', { step: 'offer', ...done }],

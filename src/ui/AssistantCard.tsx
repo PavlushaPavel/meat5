@@ -29,19 +29,30 @@ export function AssistantCard({
         openExternal(url)
       }}
       className={cn(
-        'group flex w-full items-center gap-sp3 rounded-card border border-line bg-panel p-sp4 text-left',
+        'group flex w-full items-center gap-sp3 rounded-card border p-sp4 text-left',
         'transition-transform duration-[var(--t-press)] ease-e-out',
-        ready ? 'cursor-pointer active:scale-[0.98]' : 'cursor-not-allowed opacity-60',
+        // Поверх фотографии полупрозрачная карточка читается как брак, поэтому
+        // недоступность показываем приглушённым цветом, а не альфой.
+        ready
+          ? 'cursor-pointer border-line bg-panel active:scale-[0.98]'
+          : 'cursor-not-allowed border-line/70 bg-ground-deep',
       )}
     >
       <span
         aria-hidden
-        className="label-mono grid h-11 w-11 shrink-0 place-items-center rounded-chip bg-[color-mix(in_oklab,var(--acid)_18%,transparent)] text-[13px] text-[var(--acid)]"
+        className={cn(
+          'label-mono grid h-11 w-11 shrink-0 place-items-center rounded-chip text-[13px]',
+          ready
+            ? 'bg-[color-mix(in_oklab,var(--acid)_18%,transparent)] text-[var(--acid)]'
+            : 'bg-raised text-ink-3',
+        )}
       >
         {number}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-[17px] leading-tight font-semibold text-ink">{title}</span>
+        <span className={cn('block text-[17px] leading-tight font-semibold', ready ? 'text-ink' : 'text-ink-2')}>
+          {title}
+        </span>
         <span className="mt-1 block text-[14px] leading-snug text-ink-2">
           {ready ? hint : 'ссылка появится здесь'}
         </span>

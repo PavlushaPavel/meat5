@@ -1,5 +1,7 @@
 import { motion } from 'motion/react'
 import { Screen } from '../ui/Screen'
+import { Scene } from '../ui/Scene'
+import { Character } from '../ui/Character'
 import { Button } from '../ui/Button'
 import { BottomBar } from '../ui/BottomBar'
 import { NodeRail } from '../ui/NodeRail'
@@ -8,6 +10,7 @@ import { config } from '../config'
 import { track } from '../lib/analytics'
 import { useProgress } from '../store/progress'
 import { DUR, EASE_OUT } from '../lib/motion'
+import { asset } from '../lib/asset'
 
 /**
  * Экран 3. Награда после протокола 01.
@@ -19,8 +22,11 @@ export function Reward1Screen({ onNext }: { onNext: () => void }) {
   const mark = useProgress((s) => s.mark)
 
   return (
-    <Screen>
-      <div className="flex flex-1 flex-col justify-center py-sp6">
+    <Screen bare>
+      <Scene src={asset('world/offer-bench.webp')} still />
+      <Character pose="calm" side="right" height="44vh" delay={0.35} />
+
+      <div className="relative z-20 flex flex-1 flex-col justify-center px-[var(--gutter)] py-sp6">
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -34,7 +40,7 @@ export function Reward1Screen({ onNext }: { onNext: () => void }) {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: DUR.scene, ease: EASE_OUT, delay: 0.1 }}
-          className="display-xl mt-sp2 text-ink"
+          className="display-xl on-scene mt-sp2 text-ink"
         >
           Карта
           <br />
@@ -45,7 +51,7 @@ export function Reward1Screen({ onNext }: { onNext: () => void }) {
           <NodeRail step="reward1" dramatic />
         </div>
 
-        <p className="mt-sp5 max-w-[40ch] text-[16px] leading-relaxed text-ink-2">
+        <p className="on-scene mt-sp5 max-w-[34ch] text-[16px] leading-relaxed text-ink">
           Первый модуль лаборатории загорелся. Дальше — инструмент, который делает эту работу
           за тебя.
         </p>

@@ -34,8 +34,12 @@ export function Button({
         'label-mono relative w-full cursor-pointer select-none',
         'flex min-h-[56px] items-center justify-center gap-sp2 px-sp4',
         'rounded-chip transition-transform duration-[var(--t-press)] ease-e-out',
-        'active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40',
-        variant === 'primary' && 'bg-gold text-ink-on-gold shadow-[0_6px_24px_-8px_rgba(249,183,6,0.55)]',
+        'active:scale-[0.97] disabled:cursor-not-allowed disabled:active:scale-100',
+        // Недоступная кнопка не «просвечивает» кадр, а становится глухой поверхностью.
+        variant === 'primary' &&
+          (disabled
+            ? 'bg-raised text-ink-3'
+            : 'bg-gold text-ink-on-gold shadow-[0_6px_24px_-8px_rgba(249,183,6,0.55)]'),
         variant === 'secondary' && 'border border-line bg-transparent text-ink',
         variant === 'ghost' && 'text-ink-2',
         className,
