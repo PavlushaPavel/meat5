@@ -1,9 +1,11 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useProgress } from './store/progress'
 import { ACT, nextStep, STEPS, type StepId } from './router/flow'
 import { DUR, EASE_OUT } from './lib/motion'
 import { initTelegram, setBackButton } from './lib/telegram'
+import { readDebugFlag, watchDebugGesture } from './lib/debug'
+import { DebugPanel } from './ui/DebugPanel'
 import { CityScreen } from './screens/CityScreen'
 import { Lab1Screen } from './screens/Lab1Screen'
 import { Reward1Screen } from './screens/Reward1Screen'
@@ -17,10 +19,14 @@ import { PurchasedScreen } from './screens/PurchasedScreen'
 export default function App() {
   const step = useProgress((s) => s.step)
   const go = useProgress((s) => s.go)
+  const [debug, setDebug] = useState(readDebugFlag)
 
   useEffect(() => {
     initTelegram()
   }, [])
+
+  // Скрытый жест включения отладки работает всегда: в Telegram адрес не набрать.
+  useEffect(() => watchDebugGesture(() => setDebug(true)), [])
 
   // Акт меняет свет сцены: город холодный и синий, лаборатория тёплая и жёлтая.
   useEffect(() => {
@@ -42,17 +48,20 @@ export default function App() {
   const advance = () => go(nextStep(step))
 
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={step}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0, transition: { duration: 0.16 } }}
-        transition={{ duration: DUR.ui, ease: EASE_OUT }}
-      >
-        {render(step, advance)}
-      </motion.div>
-    </AnimatePresence>
+    <>
+      {debug && <DebugPanel onClose={() => setDebug(false)} />}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={step}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0, transition: { duration: 0.16 } }}
+          transition={{ duration: DUR.ui, ease: EASE_OUT }}
+        >
+          {render(step, advance)}
+        </motion.div>
+      </AnimatePresence>
+    </>
   )
 }
 

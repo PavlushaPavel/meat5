@@ -29,6 +29,19 @@ export const STEPS = [
 
 export type StepId = (typeof STEPS)[number]
 
+/** Названия шагов для служебных экранов. */
+export const STEP_TITLE: Record<StepId, string> = {
+  city: 'Город трафика',
+  lab1: 'Протокол 01 — кому',
+  reward1: 'Награда: карта аудитории',
+  lab2: 'Протокол 02 — что сказать',
+  access: 'Допуск: 12 вопросов',
+  lab3: 'Протокол 03 — куда вести',
+  bundle: 'Связка готова',
+  offer: 'Трафик Лаб, оффер',
+  purchased: 'Доступ получен',
+}
+
 /** Акт задаёт свет сцены: город холодный и синий, лаборатория тёплая и жёлтая. */
 export const ACT: Record<StepId, 'city' | 'lab'> = {
   city: 'city',
