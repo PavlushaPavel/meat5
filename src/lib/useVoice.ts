@@ -13,10 +13,13 @@ import type { Line } from '../content/script'
 export function useVoice(lines: Line[], audioUrl?: string) {
   const totalScript = lines.reduce((sum, l) => sum + l.hold, 0)
   const [elapsed, setElapsed] = useState(0)
+  const elapsedRef = useRef(0)
   const [playing, setPlaying] = useState(false)
   const [duration, setDuration] = useState(totalScript)
+  const [rate, setRate] = useState(1)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const rafRef = useRef<number | undefined>(undefined)
+  const rateRef = useRef(1)
   const startedAt = useRef(0)
   const offset = useRef(0)
 
@@ -36,8 +39,11 @@ export function useVoice(lines: Line[], audioUrl?: string) {
 
   const tick = useCallback(() => {
     const el = audioRef.current
-    const now = el ? el.currentTime * 1000 : offset.current + (performance.now() - startedAt.current)
-    setElapsed(Math.min(now, duration))
+    const now = el
+      ? el.currentTime * 1000
+      : offset.current + (performance.now() - startedAt.current) * rateRef.current
+    elapsedRef.current = Math.min(now, duration)
+    setElapsed(elapsedRef.current)
     if (now >= duration) {
       setPlaying(false)
       return
@@ -51,18 +57,33 @@ export function useVoice(lines: Line[], audioUrl?: string) {
     rafRef.current = requestAnimationFrame(tick)
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current)
-      offset.current = elapsed
+      offset.current = elapsedRef.current
     }
-    // elapsed намеренно не в зависимостях: он меняется каждый кадр и перезапустил бы цикл
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playing, tick])
+
+  /** Скорость по кругу: 1× → 1.5× → 2× → 1×. Больше двух — уже неразборчиво. */
+  const cycleRate = useCallback(() => {
+    setRate((prev) => {
+      const next = prev === 1 ? 1.5 : prev === 1.5 ? 2 : 1
+      // Переключение на ходу не должно дёргать прогресс: фиксируем накопленное.
+      offset.current = elapsedRef.current
+      startedAt.current = performance.now()
+      rateRef.current = next
+      if (audioRef.current) audioRef.current.playbackRate = next
+      return next
+    })
+  }, [])
 
   const toggle = useCallback(() => {
     const el = audioRef.current
     setPlaying((p) => {
       if (el) {
-        if (p) el.pause()
-        else void el.play()
+        if (p) {
+          el.pause()
+        } else {
+          el.playbackRate = rateRef.current
+          void el.play()
+        }
       }
       return !p
     })
@@ -72,6 +93,7 @@ export function useVoice(lines: Line[], audioUrl?: string) {
   const finish = useCallback(() => {
     audioRef.current?.pause()
     setPlaying(false)
+    elapsedRef.current = duration
     setElapsed(duration)
     offset.current = duration
   }, [duration])
@@ -89,10 +111,16 @@ export function useVoice(lines: Line[], audioUrl?: string) {
     index = i
   }
 
+  /** Оставшееся время считаем с учётом скорости: на 2× ждать вдвое меньше. */
+  const remaining = Math.max(0, duration - elapsed) / rate
+
   return {
     playing,
     toggle,
     finish,
+    rate,
+    cycleRate,
+    remaining,
     index,
     line: lines[index],
     elapsed,

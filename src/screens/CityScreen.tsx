@@ -5,6 +5,7 @@ import { Scene } from '../ui/Scene'
 import { Subtitles } from '../ui/Subtitles'
 import { VoiceBar } from '../ui/VoiceBar'
 import { Character } from '../ui/Character'
+import { NodeRail } from '../ui/NodeRail'
 import { Button } from '../ui/Button'
 import { BottomBar } from '../ui/BottomBar'
 import { CITY_SCRIPT } from '../content/script'
@@ -57,20 +58,32 @@ export function CityScreen({ onNext }: { onNext: () => void }) {
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: DUR.scene, ease: EASE_OUT }}
-          className="display-xl max-w-[7ch] text-ink [text-shadow:0_4px_40px_rgba(2,6,14,0.9)]"
+          className="display-xl on-scene max-w-[7ch] text-ink"
         >
           {revealed ? 'Трафик Лаб' : 'Город трафика'}
         </motion.h1>
 
+        {/* Кадр «доступ ограничен» раньше был пустым: заголовок и кнопка на фото.
+            Теперь он показывает, ЧТО за дверью — три элемента связки, все закрытые. */}
         {revealed && (
-          <motion.p
-            initial={{ opacity: 0, y: 10 }}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: DUR.ui, ease: EASE_OUT, delay: 0.1 }}
-            className="label-mono mt-sp3 text-[var(--acid)]"
+            transition={{ duration: DUR.scene, ease: EASE_OUT, delay: 0.1 }}
+            className="mt-sp4"
           >
-            доступ ограничен
-          </motion.p>
+            <span className="label-mono inline-block rounded-chip border border-alert/60 bg-[color-mix(in_oklab,var(--color-ground-deep)_80%,transparent)] px-sp2 py-[6px] text-alert backdrop-blur-[4px]">
+              доступ ограничен
+            </span>
+
+            <p className="on-scene mt-sp4 max-w-[32ch] text-[17px] leading-snug text-ink">
+              За дверью три элемента рекламной связки. Ни один пока не открыт.
+            </p>
+
+            <div className="mt-sp4">
+              <NodeRail step="city" onScene />
+            </div>
+          </motion.div>
         )}
 
         <div className="flex-1" />
@@ -85,9 +98,10 @@ export function CityScreen({ onNext }: { onNext: () => void }) {
             <VoiceBar
               playing={voice.playing}
               progress={voice.progress}
-              elapsed={voice.elapsed}
-              duration={voice.duration}
+              remaining={voice.remaining}
+              rate={voice.rate}
               onToggle={voice.toggle}
+              onCycleRate={voice.cycleRate}
               className="mb-sp4"
             />
           </>

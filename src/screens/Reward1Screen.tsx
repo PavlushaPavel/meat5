@@ -26,7 +26,7 @@ export function Reward1Screen({ onNext }: { onNext: () => void }) {
       <Scene src={asset('world/offer-bench.webp')} still />
       <Character pose="calm" side="right" height="44vh" delay={0.35} />
 
-      <div className="relative z-20 flex flex-1 flex-col justify-center px-[var(--gutter)] py-sp6">
+      <div className="relative z-20 flex flex-1 flex-col px-[var(--gutter)] pt-sp6 pb-sp2">
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -55,6 +55,9 @@ export function Reward1Screen({ onNext }: { onNext: () => void }) {
           Первый модуль лаборатории загорелся. Дальше — инструмент, который делает эту работу
           за тебя.
         </p>
+
+        {/* Распорка: карточка прижата к низу, чтобы не закрывать лицо ведущего. */}
+        <div className="flex-1" />
 
         <div className="mt-sp4">
           <AssistantCard

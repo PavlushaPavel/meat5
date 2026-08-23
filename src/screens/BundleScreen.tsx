@@ -51,9 +51,10 @@ export function BundleScreen({ onNext }: { onNext: () => void }) {
             <VoiceBar
               playing={voice.playing}
               progress={voice.progress}
-              elapsed={voice.elapsed}
-              duration={voice.duration}
+              remaining={voice.remaining}
+              rate={voice.rate}
               onToggle={voice.toggle}
+              onCycleRate={voice.cycleRate}
               className="mb-sp4"
             />
           </>

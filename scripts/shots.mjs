@@ -32,8 +32,9 @@ const PLAY = 'button[aria-label="Слушать"]'
 const STATES = [
   ['1-city', { step: 'city' }],
   ['1b-city-voice', { step: 'city' }, PLAY],
+  ['1c-city-reveal', { step: 'city' }, 'button:has-text("Пропустить")'],
   ['2-lab1', { step: 'lab1', ...done }],
-  ['2b-lab1-voice', { step: 'lab1', ...done, video_1_completed: false }, PLAY],
+  ['2b-lab1-bridge', { step: 'lab1', ...done, video_1_completed: false }],
   ['3-reward1', { step: 'reward1', ...done }],
   ['4-lab2', { step: 'lab2', ...done }],
   ['5-access', { step: 'access', ...done, quiz_completed: false }],
