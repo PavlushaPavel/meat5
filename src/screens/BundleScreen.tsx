@@ -2,13 +2,11 @@ import { useState } from 'react'
 import { motion } from 'motion/react'
 import { Screen } from '../ui/Screen'
 import { Scene } from '../ui/Scene'
-import { Subtitles } from '../ui/Subtitles'
-import { VoiceBar } from '../ui/VoiceBar'
-import { useVoice } from '../lib/useVoice'
+import { Bridge } from '../ui/Bridge'
 import { Button } from '../ui/Button'
 import { BottomBar } from '../ui/BottomBar'
 import { NodeRail } from '../ui/NodeRail'
-import { BUNDLE_SCRIPT, META_REVEAL } from '../content/script'
+import { BUNDLE_TEXT, META_REVEAL } from '../content/script'
 import { config } from '../config'
 import { track } from '../lib/analytics'
 import { openExternal } from '../lib/telegram'
@@ -25,7 +23,6 @@ import { asset } from '../lib/asset'
  */
 export function BundleScreen({ onNext }: { onNext: () => void }) {
   const { mark, result_site_opened } = useProgress()
-  const voice = useVoice(BUNDLE_SCRIPT, config.voice.bundle || undefined)
   const [phase, setPhase] = useState<'assemble' | 'payoff'>(result_site_opened ? 'payoff' : 'assemble')
 
   return (
@@ -46,17 +43,7 @@ export function BundleScreen({ onNext }: { onNext: () => void }) {
               <br />
               готова
             </motion.h1>
-            <div className="flex-1" />
-            <Subtitles line={voice.started ? voice.line : undefined} className="mb-sp4" />
-            <VoiceBar
-              playing={voice.playing}
-              progress={voice.progress}
-              remaining={voice.remaining}
-              rate={voice.rate}
-              onToggle={voice.toggle}
-              onCycleRate={voice.cycleRate}
-              className="mb-sp4"
-            />
+            <Bridge blocks={BUNDLE_TEXT} delay={1.1} plate className="mt-sp5" />
           </>
         )}
 
@@ -92,7 +79,6 @@ export function BundleScreen({ onNext }: { onNext: () => void }) {
         {phase === 'assemble' ? (
           <Button
             onClick={() => {
-              voice.finish()
               track('demo_site_clicked')
               mark('result_site_opened', true)
               if (config.resultDemoUrl) openExternal(config.resultDemoUrl)

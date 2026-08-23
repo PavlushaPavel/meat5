@@ -3,6 +3,7 @@ import { motion } from 'motion/react'
 import { Screen } from '../ui/Screen'
 import { Scene } from '../ui/Scene'
 import { ElementReveal } from '../ui/ElementReveal'
+import { Bridge, ReadingScrim } from '../ui/Bridge'
 import { VideoBlock } from '../ui/VideoBlock'
 import { Button } from '../ui/Button'
 import { BottomBar } from '../ui/BottomBar'
@@ -31,47 +32,14 @@ export function Lab1Screen({ onNext }: { onNext: () => void }) {
     <Screen bare>
       <Scene src={asset('world/lab-interior.webp')} still />
       <Doors />
-      {/* Мост читают, а не смотрят: на время чтения сцена уходит вглубь,
-          иначе пояснительный текст спорит с колбами и полосами на полу. */}
-      {phase === 'bridge' && (
-        <div
-          aria-hidden
-          className="absolute inset-0 z-10"
-          style={{ background: 'color-mix(in oklab, var(--color-ground) 74%, transparent)' }}
-        />
-      )}
+      {phase === 'bridge' && <ReadingScrim />}
 
       <div className="relative z-20 flex flex-1 flex-col px-[var(--gutter)] pt-sp5 pb-sp4">
         {phase === 'bridge' ? (
           <>
             <ElementReveal index="01" title="Кому мы продаём" />
 
-            <div className="mt-sp5 flex flex-col gap-sp3">
-              {LAB1_BRIDGE.map((block, i) => (
-                <motion.div
-                  key={block.text}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: DUR.ui, ease: EASE_OUT, delay: 1.05 + i * 0.07 }}
-                >
-                  {block.kind === 'quote' ? (
-                    <p className="border-l-2 border-gold pl-sp3 text-[19px] leading-snug font-semibold text-ink on-scene">
-                      «{block.text}»
-                    </p>
-                  ) : (
-                    <p
-                      className={
-                        block.kind === 'lead'
-                          ? 'on-scene max-w-[34ch] text-[19px] leading-snug font-semibold text-ink'
-                          : 'on-scene max-w-[38ch] text-[16px] leading-relaxed text-ink-2'
-                      }
-                    >
-                      {block.text}
-                    </p>
-                  )}
-                </motion.div>
-              ))}
-            </div>
+            <Bridge blocks={LAB1_BRIDGE} delay={1.05} className="mt-sp5" />
           </>
         ) : (
           <motion.div

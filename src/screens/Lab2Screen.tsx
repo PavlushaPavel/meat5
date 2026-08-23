@@ -2,15 +2,14 @@ import { useState } from 'react'
 import { motion } from 'motion/react'
 import { Screen } from '../ui/Screen'
 import { Scene } from '../ui/Scene'
-import { Subtitles } from '../ui/Subtitles'
-import { VoiceBar } from '../ui/VoiceBar'
-import { useVoice } from '../lib/useVoice'
+import { Bridge, ReadingScrim } from '../ui/Bridge'
+import { ElementReveal } from '../ui/ElementReveal'
 import { VideoBlock } from '../ui/VideoBlock'
 import { Button } from '../ui/Button'
 import { BottomBar } from '../ui/BottomBar'
 import { NodeRail } from '../ui/NodeRail'
 import { AssistantCard } from '../ui/AssistantCard'
-import { BRIDGE2_SCRIPT } from '../content/script'
+import { BRIDGE2 } from '../content/script'
 import { config } from '../config'
 import { track } from '../lib/analytics'
 import { useProgress } from '../store/progress'
@@ -20,13 +19,12 @@ import { asset } from '../lib/asset'
 /**
  * Экран 4. Мост ко второму эксперименту, протокол 02 и второй инструмент.
  *
- * Это не «Урок 2. Офферы». Сначала короткая сцена «АУДИТОРИЯ ✓ → ???»: сначала
- * создаём потребность, потом даём материал. Три состояния живут ВНУТРИ экрана,
- * новых страниц не появляется.
+ * Это не «Урок 2. Офферы». Сначала создаём потребность: аудиторию поняли, но
+ * деньги она сама не принесёт. Мост читается текстом — слушать здесь нечего,
+ * реплик всего несколько.
  */
 export function Lab2Screen({ onNext }: { onNext: () => void }) {
   const { mark, video_2_completed } = useProgress()
-  const voice = useVoice(BRIDGE2_SCRIPT, config.voice.bridge2 || undefined)
   const [phase, setPhase] = useState<'bridge' | 'video' | 'reward'>(
     video_2_completed ? 'reward' : 'bridge',
   )
@@ -34,8 +32,9 @@ export function Lab2Screen({ onNext }: { onNext: () => void }) {
   return (
     <Screen bare>
       <Scene src={asset('world/offer-bench.webp')} still />
+      {phase === 'bridge' && <ReadingScrim />}
 
-      <div className="relative z-20 flex flex-1 flex-col px-[var(--gutter)] pt-sp6">
+      <div className="relative z-20 flex flex-1 flex-col px-[var(--gutter)] pt-sp5 pb-sp2">
         {phase === 'bridge' && (
           <>
             <div className="flex items-center gap-sp2">
@@ -43,17 +42,9 @@ export function Lab2Screen({ onNext }: { onNext: () => void }) {
               <span aria-hidden className="h-px flex-1 bg-line" />
               <span className="label-mono text-ink-3">???</span>
             </div>
-            <div className="flex-1" />
-            <Subtitles line={voice.started ? voice.line : undefined} className="mb-sp4" />
-            <VoiceBar
-              playing={voice.playing}
-              progress={voice.progress}
-              remaining={voice.remaining}
-              rate={voice.rate}
-              onToggle={voice.toggle}
-              onCycleRate={voice.cycleRate}
-              className="mb-sp4"
-            />
+
+            <ElementReveal index="02" title="Что ему сказать" className="mt-sp4" />
+            <Bridge blocks={BRIDGE2} delay={1.05} className="mt-sp5" />
           </>
         )}
 
@@ -63,10 +54,8 @@ export function Lab2Screen({ onNext }: { onNext: () => void }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: DUR.ui, ease: EASE_OUT }}
           >
-            <h1 className="display-m on-scene text-ink">
-              Элемент второй:
-              <br />
-              что ему сказать
+            <h1 className="display-m on-scene max-w-[12ch] text-ink">
+              Элемент второй: что ему сказать
             </h1>
             <div className="mt-sp5">
               <VideoBlock
@@ -91,7 +80,14 @@ export function Lab2Screen({ onNext }: { onNext: () => void }) {
             <div className="mt-sp5">
               <NodeRail step="lab2" dramatic />
             </div>
-            <div className="mt-sp5">
+            <p className="on-scene mt-sp5 max-w-[34ch] text-[16px] leading-relaxed text-ink">
+              Теперь у тебя два рабочих инструмента. Осталось довести гипотезу до того, что человек
+              увидит после клика.
+            </p>
+
+            <div className="flex-1" />
+
+            <div className="mt-sp4">
               <AssistantCard
                 number="02"
                 title="Офферы и объявления"
@@ -103,24 +99,13 @@ export function Lab2Screen({ onNext }: { onNext: () => void }) {
                 }}
               />
             </div>
-            <p className="on-scene mt-sp4 max-w-[40ch] text-[16px] leading-relaxed text-ink">
-              Теперь у тебя два рабочих инструмента. Осталось довести гипотезу до того, что человек
-              увидит после клика.
-            </p>
           </>
         )}
       </div>
 
       <BottomBar>
         {phase === 'bridge' && (
-          <Button
-            onClick={() => {
-              voice.finish()
-              setPhase('video')
-            }}
-          >
-            Превратить это в предложение
-          </Button>
+          <Button onClick={() => setPhase('video')}>Превратить это в предложение</Button>
         )}
         {phase === 'video' && (
           <Button disabled={!video_2_completed} onClick={() => setPhase('reward')}>
