@@ -119,18 +119,23 @@ export function Lab2Screen({ onNext }: { onNext: () => void }) {
           </Button>
         )}
         {phase === 'reward' &&
-          (assistant_2_opened || !assistantReady ? (
+          (assistant_2_opened ? (
             <Button onClick={onNext}>Получить допуск</Button>
           ) : (
-            <Button
-              onClick={() => {
-                track('assistant2_clicked')
-                mark('assistant_2_opened', true)
-                openExternal(config.assistant2Url)
-              }}
-            >
-              Забрать ассистента
-            </Button>
+            <>
+              <Button
+                onClick={() => {
+                  track('assistant2_clicked')
+                  mark('assistant_2_opened', true)
+                  if (assistantReady) openExternal(config.assistant2Url)
+                }}
+              >
+                Забрать ассистента
+              </Button>
+              <p className="mt-sp2 text-center text-[14px] leading-snug text-ink-2">
+                Попробуй прямо сейчас на своём проекте.
+              </p>
+            </>
           ))}
       </BottomBar>
     </Screen>

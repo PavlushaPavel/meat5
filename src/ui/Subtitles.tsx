@@ -28,7 +28,7 @@ export function Subtitles({
         className="pointer-events-none absolute -inset-x-[var(--gutter)] -top-sp6 -bottom-sp5"
         style={{
           background:
-            'linear-gradient(to bottom, transparent 0%, color-mix(in oklab, var(--color-ground-deep) 82%, transparent) 30%, color-mix(in oklab, var(--color-ground-deep) 92%, transparent) 100%)',
+            'linear-gradient(to bottom, transparent 0%, color-mix(in oklab, var(--color-ground-deep) 62%, transparent) 30%, color-mix(in oklab, var(--color-ground-deep) 78%, transparent) 100%)',
         }}
       />
       {!line && hint && (

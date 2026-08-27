@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useProgress } from './store/progress'
 import { ACT, nextStep, STEPS, type StepId } from './router/flow'
+import { asset } from './lib/asset'
 import { DUR, EASE_OUT } from './lib/motion'
 import { initTelegram, setBackButton } from './lib/telegram'
 import { readDebugFlag, watchDebugGesture } from './lib/debug'
@@ -49,6 +50,7 @@ export default function App() {
 
   return (
     <>
+      <WideBackdrop step={step} />
       {debug && <DebugPanel onClose={() => setDebug(false)} />}
       <AnimatePresence mode="wait">
         <motion.div
@@ -62,6 +64,44 @@ export default function App() {
         </motion.div>
       </AnimatePresence>
     </>
+  )
+}
+
+/**
+ * Кадр текущей сцены во всю ширину окна.
+ *
+ * Приложение свёрстано под телефон и живёт колонкой 460px. На ноутбуке вокруг
+ * колонки оставалась пустая почти чёрная плоскость — мир обрывался по краям.
+ * Здесь тот же кадр расфокусирован и приглушён, поэтому окно принадлежит миру,
+ * а внимание остаётся в колонке. На телефоне слой не рендерится вовсе.
+ */
+const BACKDROP: Record<StepId, string> = {
+  city: 'world/city-districts.webp',
+  lab1: 'world/lab-interior.webp',
+  reward1: 'world/offer-bench.webp',
+  lab2: 'world/offer-bench.webp',
+  access: 'world/access-door.webp',
+  lab3: 'world/assembly.webp',
+  bundle: 'world/city-conversions.webp',
+  offer: 'world/lab-interior.webp',
+  purchased: 'world/assembly.webp',
+}
+
+function WideBackdrop({ step }: { step: StepId }) {
+  return (
+    // z-0, а не -z-10: заливка html/body рисуется поверх потомков с отрицательным
+    // z-index и полностью съедает этот слой. Уже наступали на это со сценами.
+    <div aria-hidden className="fixed inset-0 z-0 hidden overflow-hidden sm:block">
+      <img
+        src={asset(BACKDROP[step])}
+        alt=""
+        className="h-full w-full scale-110 object-cover blur-[26px]"
+      />
+      <div
+        className="absolute inset-0"
+        style={{ background: 'color-mix(in oklab, var(--color-ground) 78%, transparent)' }}
+      />
+    </div>
   )
 }
 

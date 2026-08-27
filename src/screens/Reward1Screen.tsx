@@ -27,7 +27,7 @@ export function Reward1Screen({ onNext }: { onNext: () => void }) {
   return (
     <Screen bare>
       <Scene src={asset('world/offer-bench.webp')} still />
-      <Character pose="calm" side="right" height="34vh" delay={0.35} />
+      <Character pose="calm" side="right" height="48vh" delay={0.35} />
 
       <div className="relative z-20 flex flex-1 flex-col px-[var(--gutter)] pt-sp6 pb-sp2">
         <p className="label-mono text-[var(--acid)]">получено</p>
@@ -59,18 +59,23 @@ export function Reward1Screen({ onNext }: { onNext: () => void }) {
       </div>
 
       <BottomBar>
-        {assistant_1_opened || !ready ? (
+        {assistant_1_opened ? (
           <Button onClick={onNext}>Идти дальше</Button>
         ) : (
-          <Button
-            onClick={() => {
-              track('assistant1_clicked')
-              mark('assistant_1_opened', true)
-              openExternal(config.assistant1Url)
-            }}
-          >
-            Забрать ассистента
-          </Button>
+          <>
+            <Button
+              onClick={() => {
+                track('assistant1_clicked')
+                mark('assistant_1_opened', true)
+                if (ready) openExternal(config.assistant1Url)
+              }}
+            >
+              Забрать ассистента
+            </Button>
+            <p className="mt-sp2 text-center text-[14px] leading-snug text-ink-2">
+              Попробуй прямо сейчас на своём проекте.
+            </p>
+          </>
         )}
       </BottomBar>
     </Screen>

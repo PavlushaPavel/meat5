@@ -42,7 +42,7 @@ export function Scene({
         className="absolute inset-0"
         style={{
           background:
-            'linear-gradient(to bottom, color-mix(in oklab, var(--color-ground-deep) 78%, transparent) 0%, color-mix(in oklab, var(--color-ground-deep) 24%, transparent) 30%, color-mix(in oklab, var(--color-ground-deep) 46%, transparent) 58%, var(--color-ground) 92%)',
+            'linear-gradient(to bottom, color-mix(in oklab, var(--color-ground-deep) 62%, transparent) 0%, color-mix(in oklab, var(--color-ground-deep) 12%, transparent) 26%, color-mix(in oklab, var(--color-ground-deep) 34%, transparent) 62%, color-mix(in oklab, var(--color-ground) 88%, transparent) 100%)',
         }}
       />
       {children}

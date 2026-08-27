@@ -21,10 +21,12 @@ const SCENES = [
   ['city-districts', 'ref1.png'],
   ['city-conversions', 'ref3.png'],
   ['lab-exterior', 'lab-exterior.png'],
-  ['lab-interior', 'lab-interior.jpg'],
-  ['offer-bench', 'offer-bench.jpg'],
+  // Лаборатория — не химическая: здесь производят рекламные связки, поэтому
+  // на кадрах ноутбуки, дашборды и макеты страниц, а в проёме виден сам город.
+  ['lab-interior', 'lab2-interior.png'],
+  ['offer-bench', 'lab2-bench.jpg'],
   ['access-door', 'access-door.png'],
-  ['assembly', 'assembly.jpg'],
+  ['assembly', 'lab2-assembly.png'],
 ]
 
 /**

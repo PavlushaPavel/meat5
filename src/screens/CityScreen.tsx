@@ -77,7 +77,7 @@ export function CityScreen({ onNext }: { onNext: () => void }) {
               className="pointer-events-none absolute -inset-x-[var(--gutter)] -top-sp4 -bottom-sp6 -z-10"
               style={{
                 background:
-                  'linear-gradient(to bottom, color-mix(in oklab, var(--color-ground-deep) 55%, transparent) 0%, color-mix(in oklab, var(--color-ground-deep) 86%, transparent) 45%, color-mix(in oklab, var(--color-ground-deep) 78%, transparent) 100%)',
+                  'linear-gradient(to bottom, color-mix(in oklab, var(--color-ground-deep) 40%, transparent) 0%, color-mix(in oklab, var(--color-ground-deep) 70%, transparent) 45%, color-mix(in oklab, var(--color-ground-deep) 62%, transparent) 100%)',
               }}
             />
             <span className="label-mono inline-block rounded-chip border border-alert/60 bg-[color-mix(in_oklab,var(--color-ground-deep)_80%,transparent)] px-sp2 py-[6px] text-alert backdrop-blur-[4px]">
@@ -118,7 +118,7 @@ export function CityScreen({ onNext }: { onNext: () => void }) {
                   className="pointer-events-none absolute -inset-x-[var(--gutter)] -top-sp6 -bottom-sp5 -z-10"
                   style={{
                     background:
-                      'linear-gradient(to bottom, transparent 0%, color-mix(in oklab, var(--color-ground-deep) 78%, transparent) 32%, color-mix(in oklab, var(--color-ground-deep) 90%, transparent) 100%)',
+                      'linear-gradient(to bottom, transparent 0%, color-mix(in oklab, var(--color-ground-deep) 58%, transparent) 34%, color-mix(in oklab, var(--color-ground-deep) 72%, transparent) 100%)',
                   }}
                 />
                 <p className="on-scene max-w-[26ch] text-[22px] leading-[1.24] font-semibold text-ink">
@@ -189,7 +189,7 @@ function CityFlight({ frame }: { frame: number }) {
         className="absolute inset-0"
         style={{
           background:
-            'linear-gradient(to bottom, color-mix(in oklab, var(--color-ground-deep) 78%, transparent) 0%, color-mix(in oklab, var(--color-ground-deep) 24%, transparent) 30%, color-mix(in oklab, var(--color-ground-deep) 46%, transparent) 58%, var(--color-ground) 92%)',
+            'linear-gradient(to bottom, color-mix(in oklab, var(--color-ground-deep) 62%, transparent) 0%, color-mix(in oklab, var(--color-ground-deep) 12%, transparent) 26%, color-mix(in oklab, var(--color-ground-deep) 34%, transparent) 62%, color-mix(in oklab, var(--color-ground) 88%, transparent) 100%)',
         }}
       />
     </div>
