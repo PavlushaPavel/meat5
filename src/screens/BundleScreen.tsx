@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { motion } from 'motion/react'
 import { Screen } from '../ui/Screen'
 import { Scene } from '../ui/Scene'
-import { Bridge } from '../ui/Bridge'
+import { Bridge, ReadingScrim } from '../ui/Bridge'
 import { Button } from '../ui/Button'
 import { BottomBar } from '../ui/BottomBar'
 import { NodeRail } from '../ui/NodeRail'
@@ -50,6 +50,7 @@ export function BundleScreen({ onNext }: { onNext: () => void }) {
   return (
     <Screen bare>
       <Scene src={asset('world/city-conversions.webp')} align="top" />
+      {phase === 'payoff' && <ReadingScrim strength={78} />}
 
       <div className="relative z-20 flex flex-1 flex-col px-[var(--gutter)] pt-sp6">
         {phase === 'assemble' && (
@@ -74,7 +75,7 @@ export function BundleScreen({ onNext }: { onNext: () => void }) {
             <h1 className="display-m on-scene text-balance text-ink">
               Не брать на себя больше работы. Брать под контроль больше результата.
             </h1>
-            <p className="on-scene mt-sp4 max-w-[40ch] text-[16px] leading-relaxed text-ink-2">
+            <p className="on-scene mt-sp4 max-w-[40ch] text-[16px] leading-relaxed text-ink">
               Ты пришёл больше зарабатывать — не за счёт того, чтобы больше пахать. Сейчас ты
               увидел, как взять под контроль ещё один кусок результата. Большую часть тяжёлой
               работы при этом сделали ИИ-инструменты.
@@ -87,7 +88,7 @@ export function BundleScreen({ onNext }: { onNext: () => void }) {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: DUR.ui, ease: EASE_OUT, delay: 0.1 + i * 0.08 }}
-                  className="mt-sp2 max-w-[40ch] text-[15px] leading-relaxed text-ink-3"
+                  className="on-scene mt-sp2 max-w-[40ch] text-[15px] leading-relaxed text-ink-2"
                 >
                   {line}
                 </motion.p>

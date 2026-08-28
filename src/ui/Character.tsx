@@ -18,6 +18,7 @@ export function Character({
   height = '62vh',
   delay = 0,
   pose = 'point',
+  bleed = true,
 }: {
   className?: string
   side?: 'left' | 'right'
@@ -25,6 +26,12 @@ export function Character({
   delay?: number
   /** point — указывает и говорит; calm — с ноутбуком, когда отдаёт инструмент. */
   pose?: 'point' | 'calm'
+  /**
+   * bleed — фигура уходит за боковой край, как часть сцены. Выключается там,
+   * где ведущий сам является содержанием кадра (экран продажи): там он должен
+   * быть виден целиком, иначе выглядит обрезанным, а не встроенным в мир.
+   */
+  bleed?: boolean
 }) {
   return (
     // Клип-слой: фигура намеренно уходит за край кадра, но страница от этого
@@ -40,7 +47,7 @@ export function Character({
         className={cn(
           'absolute bottom-0 max-w-none select-none',
           'drop-shadow-[0_24px_60px_rgba(2,6,14,0.85)]',
-          side === 'right' ? '-right-[8%]' : '-left-[8%]',
+          side === 'right' ? (bleed ? '-right-[8%]' : 'right-0') : bleed ? '-left-[8%]' : 'left-0',
           className,
         )}
         style={{ height }}

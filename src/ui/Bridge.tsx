@@ -70,12 +70,12 @@ export function Bridge({
  * Затемнение сцены на время чтения. Кадр остаётся, но уходит вглубь: иначе
  * пояснительный текст спорит с колбами, полосами и светом.
  */
-export function ReadingScrim() {
+export function ReadingScrim({ strength = 74 }: { strength?: number }) {
   return (
     <div
       aria-hidden
       className="absolute inset-0 z-10"
-      style={{ background: 'color-mix(in oklab, var(--color-ground) 74%, transparent)' }}
+      style={{ background: `color-mix(in oklab, var(--color-ground) ${strength}%, transparent)` }}
     />
   )
 }

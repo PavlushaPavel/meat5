@@ -43,6 +43,7 @@ const STATES = [
   ['6-lab3', { step: 'lab3', ...done }],
   ['6b-lab3-bridge', { step: 'lab3', ...done, video_3_completed: false }],
   ['7-bundle', { step: 'bundle', ...done, result_site_opened: false }],
+  ['7b-payoff', { step: 'bundle', ...done }],
   ['8-offer', { step: 'offer', ...done }],
   ['9-purchased', { step: 'purchased', ...done }],
 ]

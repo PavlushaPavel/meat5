@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { motion } from 'motion/react'
 import { Screen } from '../ui/Screen'
 import { Scene } from '../ui/Scene'
+import { ReadingScrim } from '../ui/Bridge'
 import { Button } from '../ui/Button'
 import { BottomBar } from '../ui/BottomBar'
 import { config } from '../config'
@@ -26,6 +27,7 @@ export function PurchasedScreen() {
   return (
     <Screen bare>
       <Scene src={asset('world/assembly.webp')} still />
+      <ReadingScrim strength={62} />
 
       <div className="relative z-10 flex flex-1 flex-col justify-center px-[var(--gutter)]">
         <motion.p
@@ -46,7 +48,7 @@ export function PurchasedScreen() {
           <br />
           открыт
         </motion.h1>
-        <p className="on-scene mt-sp4 max-w-[38ch] text-[16px] leading-relaxed text-ink-2">
+        <p className="on-scene mt-sp4 max-w-[38ch] text-[16px] leading-relaxed text-ink">
           Практикум ждёт внутри. Первый шаг — собрать структуру под свою гипотезу.
         </p>
       </div>

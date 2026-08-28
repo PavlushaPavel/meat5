@@ -42,16 +42,19 @@ export function OfferScreen({ onNext }: { onNext: () => void }) {
 
   return (
     <Screen bare>
-      <header className="relative h-[46vh] shrink-0 overflow-hidden">
+      <header className="relative h-[52vh] shrink-0 overflow-hidden">
         <Scene src={asset('world/lab-interior.webp')} still />
-        <Character pose="calm" side="right" height="40vh" delay={0.15} />
+        <Character pose="calm" side="right" height="44vh" delay={0.15} bleed={false} />
         <div className="relative z-20 px-[var(--gutter)] pt-sp6">
           <h1 className="display-xl on-scene max-w-[8ch] text-ink">Трафик Лаб</h1>
         </div>
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-24"
-          style={{ background: 'linear-gradient(to top, var(--color-ground), transparent)' }}
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-44"
+          style={{
+            background:
+              'linear-gradient(to top, var(--color-ground) 22%, color-mix(in oklab, var(--color-ground) 72%, transparent) 58%, transparent 100%)',
+          }}
         />
       </header>
 
