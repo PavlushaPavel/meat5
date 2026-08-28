@@ -94,17 +94,18 @@ export function VideoBlock({
           />
         ) : (
           <>
-            <img
-              src={asset(video.poster)}
-              alt=""
-              aria-hidden
-              loading="lazy"
-              className="absolute inset-0 h-full w-full object-cover opacity-40 grayscale-[0.3]"
-            />
             <div
               aria-hidden
               className="absolute inset-0"
-              style={{ background: 'color-mix(in oklab, var(--color-ground-deep) 62%, transparent)' }}
+              style={{ background: 'var(--color-ground-deep)' }}
+            />
+            <div
+              aria-hidden
+              className="absolute inset-0 opacity-30"
+              style={{
+                backgroundImage:
+                  'repeating-linear-gradient(135deg, color-mix(in oklab, var(--color-line) 60%, transparent) 0 1px, transparent 1px 10px)',
+              }}
             />
             <div
               aria-hidden
@@ -141,7 +142,7 @@ export function VideoBlock({
 
       <figcaption className="mt-sp2 flex items-baseline justify-between gap-sp2 [text-shadow:0_2px_16px_rgba(2,6,14,0.95),0_0_2px_rgba(2,6,14,0.9)]">
         <span className="label-mono text-ink-2">протокол {protocolNo}</span>
-        <span className="label-mono text-ink-2">
+        <span className={cn('label-mono', hasVideo ? 'text-ink-2' : 'text-ink')}>
           {hasVideo ? (video.duration ? formatDuration(video.duration) : '--:--') : 'материал будет здесь'}
         </span>
       </figcaption>

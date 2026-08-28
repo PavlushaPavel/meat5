@@ -28,13 +28,25 @@ const done = {
   result_site_opened: true,
 }
 
+/** Каждая фаза экрана мерится отдельно: текст на них лежит на разных кадрах. */
+const PLAY = 'button[aria-label="Слушать"]'
 const STATES = {
-  '7-bundle': { step: 'bundle', ...done, result_site_opened: false },
-  '7b-payoff': { step: 'bundle', ...done },
-  '8-offer': { step: 'offer', ...done },
-  '9-purchased': { step: 'purchased', ...done },
-  '1-city': { step: 'city' },
-  '3-reward1': { step: 'reward1', ...done, assistant_1_opened: false },
+  '1-city': [{ step: 'city' }],
+  '1b-city-voice': [{ step: 'city' }, PLAY],
+  '1c-city-reveal': [{ step: 'city' }, 'button:has-text("Пропустить")'],
+  '2-lab1-bridge': [{ step: 'lab1', ...done, video_1_completed: false }],
+  '2b-lab1-video': [{ step: 'lab1', ...done }],
+  '3-reward1': [{ step: 'reward1', ...done, assistant_1_opened: false }],
+  '4-lab2-bridge': [{ step: 'lab2', ...done, video_2_completed: false }],
+  '4b-lab2-reward': [{ step: 'lab2', ...done, assistant_2_opened: false }],
+  '5-access-barrier': [{ step: 'access', ...done, quiz_completed: false }],
+  '5b-quiz': [{ step: 'access', ...done, quiz_completed: false }, 'button:has-text("Получить допуск")'],
+  '6-lab3-bridge': [{ step: 'lab3', ...done, video_3_completed: false }],
+  '6b-lab3-video': [{ step: 'lab3', ...done }],
+  '7-bundle': [{ step: 'bundle', ...done, result_site_opened: false }],
+  '7b-payoff': [{ step: 'bundle', ...done }],
+  '8-offer': [{ step: 'offer', ...done }],
+  '9-purchased': [{ step: 'purchased', ...done }],
 }
 
 const luminance = ([r, g, b]) => {
@@ -56,8 +68,9 @@ const names = process.argv.slice(2).length ? process.argv.slice(2) : Object.keys
 let failures = 0
 
 for (const name of names) {
-  const state = STATES[name]
-  if (!state) continue
+  const entry = STATES[name]
+  if (!entry) continue
+  const [state, action] = entry
   const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: 1 })
   await context.addInitScript(
     (s) => localStorage.setItem('traffic-city-progress', JSON.stringify({ state: s, version: 1 })),
@@ -65,7 +78,11 @@ for (const name of names) {
   )
   const page = await context.newPage()
   await page.goto(BASE, { waitUntil: 'networkidle' })
-  await page.waitForTimeout(2200)
+  await page.waitForTimeout(1600)
+  if (action) {
+    await page.click(action).catch(() => {})
+    await page.waitForTimeout(2200)
+  }
 
   // Собираем рамки и цвета видимых текстовых блоков.
   const blocks = await page.evaluate(() => {
