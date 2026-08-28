@@ -65,7 +65,11 @@ body {
 @utility display-xl {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: clamp(30px, 8.6vw, 42px);
+  /* Нижняя граница 26px, а не 30px: на 320px «ПРЕДЛОЖЕНИЕ» в 30px не влезает
+     в колонку и распирает страницу горизонтальным скроллом. Проверено замером. */
+  font-size: clamp(26px, 8.6vw, 42px);
+  overflow-wrap: break-word;
+  hyphens: auto;
   line-height: 0.95;
   letter-spacing: -0.03em;
   text-transform: uppercase;
@@ -74,7 +78,9 @@ body {
 @utility display-m {
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: clamp(21px, 5.8vw, 26px);
+  font-size: clamp(19px, 5.8vw, 26px);
+  overflow-wrap: break-word;
+  hyphens: auto;
   line-height: 1.1;
   letter-spacing: -0.02em;
   text-transform: uppercase;

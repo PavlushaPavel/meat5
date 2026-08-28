@@ -26,8 +26,10 @@ export function Screen({
         className,
       )}
       style={{
-        paddingTop: 'env(safe-area-inset-top)',
-        paddingBottom: 'calc(env(safe-area-inset-bottom) + var(--bar-h))',
+        // max(): в браузере работает env(), в Telegram — присланные клиентом зоны.
+        paddingTop: 'max(env(safe-area-inset-top), var(--tg-sa-top))',
+        paddingBottom:
+          'calc(max(env(safe-area-inset-bottom), var(--tg-sa-bottom)) + var(--tg-gap-bottom) + var(--bar-h))',
       }}
     >
       {children}

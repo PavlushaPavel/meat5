@@ -89,7 +89,7 @@ for (const name of names) {
     const out = []
     // Текст под фиксированной кнопкой мерить бессмысленно: он уезжает из-под неё
     // при прокрутке, а замер показал бы контраст с жёлтой заливкой.
-    const bar = document.querySelector('.fixed.inset-x-0.bottom-0')
+    const bar = document.querySelector('[data-bottom-bar]')
     const barTop = bar ? bar.getBoundingClientRect().top : Infinity
     for (const el of document.querySelectorAll('h1, h2, p, li, span')) {
       const text = (el.textContent ?? '').trim()

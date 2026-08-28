@@ -83,7 +83,7 @@ for (const [name, state, action] of STATES) {
     const doc = document.scrollingElement
     if (doc && doc.scrollWidth > vw + 1) out.push(`горизонтальный скролл: ${doc.scrollWidth} > ${vw}`)
 
-    const bar = document.querySelector('.fixed.inset-x-0.bottom-0')
+    const bar = document.querySelector('[data-bottom-bar]')
     const barTop = bar ? bar.getBoundingClientRect().top : Infinity
 
     for (const el of document.querySelectorAll('h1, h2, p, button, li, figure, section')) {

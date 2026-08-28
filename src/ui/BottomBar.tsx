@@ -7,8 +7,14 @@ import type { ReactNode } from 'react'
 export function BottomBar({ children }: { children: ReactNode }) {
   return (
     <div
-      className="fixed inset-x-0 bottom-0 z-40 mx-auto w-full max-w-[var(--app-max)] px-[var(--gutter)]"
-      style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)' }}
+      data-bottom-bar
+      className="fixed inset-x-0 z-40 mx-auto w-full max-w-[var(--app-max)] px-[var(--gutter)]"
+      style={{
+        // Низ окна и низ видимой области — разные вещи: в Telegram под окном
+        // остаётся чат, и кнопка, прижатая к bottom:0, оказывается вне экрана.
+        bottom: 'var(--tg-gap-bottom)',
+        paddingBottom: 'calc(max(env(safe-area-inset-bottom), var(--tg-sa-bottom)) + 16px)',
+      }}
     >
       {/* Растушёвка к фону: кнопка не висит на резкой границе поверх сцены. */}
       <div

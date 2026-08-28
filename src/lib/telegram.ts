@@ -9,11 +9,21 @@
 type HapticStyle = 'light' | 'medium' | 'heavy' | 'rigid' | 'soft'
 type NotificationType = 'error' | 'success' | 'warning'
 
+interface SafeAreaInset {
+  top: number
+  bottom: number
+  left: number
+  right: number
+}
+
 interface TelegramWebApp {
   ready: () => void
   expand: () => void
   close: () => void
   viewportStableHeight?: number
+  viewportHeight?: number
+  safeAreaInset?: SafeAreaInset
+  contentSafeAreaInset?: SafeAreaInset
   colorScheme?: string
   themeParams?: Record<string, string>
   initDataUnsafe?: { user?: { id: number; first_name?: string; language_code?: string } }
@@ -42,10 +52,28 @@ const wa = (): TelegramWebApp | undefined => window.Telegram?.WebApp
 
 export const isTelegram = (): boolean => Boolean(wa()?.initDataUnsafe?.user || wa()?.viewportStableHeight)
 
-/** Высота видимой области: в Telegram нижняя часть экрана занята чатом. */
+/**
+ * Высота видимой области и безопасные зоны клиента.
+ *
+ * Окно вебвью может быть выше того, что человек реально видит: снизу чат.
+ * Поэтому высоту берём из viewportStableHeight, а не из 100dvh — иначе кнопка
+ * действия оказывается ниже видимой области, и воронку невозможно пройти.
+ *
+ * Отступы шапки и домашней полосы Telegram отдаёт своими полями (Bot API 8.0):
+ * env(safe-area-inset-*) внутри вебвью часто ноль, полагаться на него нельзя.
+ */
 function syncViewport() {
-  const h = wa()?.viewportStableHeight
-  document.documentElement.style.setProperty('--tg-vh', h ? `${h}px` : '100dvh')
+  const app = wa()
+  const root = document.documentElement
+  const h = app?.viewportStableHeight ?? app?.viewportHeight
+  root.style.setProperty('--tg-vh', h ? `${h}px` : '100dvh')
+
+  const sa = app?.safeAreaInset
+  const content = app?.contentSafeAreaInset
+  const top = Math.max(sa?.top ?? 0, content?.top ?? 0)
+  const bottom = Math.max(sa?.bottom ?? 0, content?.bottom ?? 0)
+  root.style.setProperty('--tg-sa-top', `${top}px`)
+  root.style.setProperty('--tg-sa-bottom', `${bottom}px`)
 }
 
 export function initTelegram(): void {
@@ -59,6 +87,8 @@ export function initTelegram(): void {
   app.setBackgroundColor?.('#050D1B')
   syncViewport()
   app.onEvent?.('viewportChanged', syncViewport)
+  app.onEvent?.('safeAreaChanged', syncViewport)
+  app.onEvent?.('contentSafeAreaChanged', syncViewport)
 }
 
 export function haptic(style: HapticStyle = 'light'): void {

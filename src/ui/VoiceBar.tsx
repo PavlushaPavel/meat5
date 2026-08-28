@@ -91,7 +91,7 @@ export function VoiceBar({
         }}
         aria-label={`Скорость ${formatRate(rate)}, переключить`}
         className={cn(
-          'label-mono shrink-0 cursor-pointer rounded-pill border px-sp2 py-[5px] tabular-nums',
+          'label-mono grid h-11 min-w-11 shrink-0 cursor-pointer place-items-center rounded-pill border px-sp2 tabular-nums',
           'transition-transform duration-[var(--t-press)] ease-e-out active:scale-[0.94]',
           rate === 1 ? 'border-line text-ink-2' : 'border-gold text-gold',
         )}
