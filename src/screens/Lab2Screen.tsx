@@ -2,35 +2,48 @@ import { useEffect, useState } from 'react'
 import { motion } from 'motion/react'
 import { Screen } from '../ui/Screen'
 import { Scene } from '../ui/Scene'
-import { Bridge, ReadingScrim } from '../ui/Bridge'
-import { ElementReveal } from '../ui/ElementReveal'
+import { ReadingScrim } from '../ui/Bridge'
+import { SegmentsScene, SEGMENTS_BEATS } from '../ui/SegmentsScene'
 import { VideoBlock } from '../ui/VideoBlock'
 import { Button } from '../ui/Button'
 import { BottomBar } from '../ui/BottomBar'
-import { NodeRail } from '../ui/NodeRail'
-import { RewardBlock } from '../ui/RewardBlock'
-import { BRIDGE2 } from '../content/script'
+import { BRIDGE_AFTER_1, BRIDGE_AFTER_1_SCENE, CTA } from '../content/copy'
 import { config } from '../config'
 import { track } from '../lib/analytics'
-import { openExternal } from '../lib/telegram'
 import { useProgress } from '../store/progress'
 import { DUR, EASE_OUT } from '../lib/motion'
 import { asset } from '../lib/asset'
 
 /**
- * Экран 4. Мост ко второму эксперименту, протокол 02 и второй инструмент.
+ * Экран 5. Мост ко второму эксперименту + Видео 2 (STATE05, SPEC.md §10-11).
  *
- * Это не «Урок 2. Офферы». Сначала создаём потребность: аудиторию поняли, но
- * деньги она сама не принесёт. Мост читается текстом — слушать здесь нечего,
- * реплик всего несколько.
+ * Мост — одна из пяти дорогих сцен ТЗ (§37, сцена 2): сегменты расходятся на
+ * отдельные ветки, каждая приходит к одному и тому же предложению, ветки
+ * схлопываются обратно в единую линию. Текст раскрывается по ходу сцены —
+ * по её тактам (SEGMENTS_BEATS), а не одним куском.
+ *
+ * Фаза «reward» отсюда вынесена в отдельное состояние reward2 (Reward2Screen):
+ * это не «Урок 2. Офферы» и не хвост этого экрана, а самостоятельная точка
+ * маршрута — ровно как reward1 после lab1. Здесь остаётся только мост и само
+ * Видео 2. Фаза видео не тронута.
  */
 export function Lab2Screen({ onNext }: { onNext: () => void }) {
-  const { mark, video_2_completed, assistant_2_opened, review, clearReview } = useProgress()
-  const assistantReady = Boolean(config.assistant2Url)
+  const { mark, video_2_completed, review, clearReview } = useProgress()
   const seekTo = review?.step === 'lab2' ? review.at : undefined
-  const [phase, setPhase] = useState<'bridge' | 'video' | 'reward'>(
-    video_2_completed ? 'reward' : 'bridge',
-  )
+  const [phase, setPhase] = useState<'bridge' | 'video'>(video_2_completed ? 'video' : 'bridge')
+  const video2 = { url: config.video2Url, duration: config.videoDurations.v2, poster: config.videoPosters.v2 }
+
+  const bridgeDelays = [
+    0.15,
+    SEGMENTS_BEATS.diverge + 0.15,
+    SEGMENTS_BEATS.collapse + 0.15,
+    SEGMENTS_BEATS.merge + 0.3,
+  ]
+
+  useEffect(() => {
+    if (phase === 'bridge') track('bridge2_viewed')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     if (seekTo === undefined) return
@@ -45,16 +58,35 @@ export function Lab2Screen({ onNext }: { onNext: () => void }) {
 
       <div className="relative z-20 flex flex-1 flex-col px-[var(--gutter)] pt-sp5 pb-sp2">
         {phase === 'bridge' && (
-          <>
-            <div className="flex items-center gap-sp2">
-              <span className="label-mono text-[var(--acid)]">аудитория ✓</span>
-              <span aria-hidden className="h-px flex-1 bg-line" />
-              <span className="label-mono text-ink-3">???</span>
-            </div>
+          // Сцена и текст держатся вместе, по центру доступной высоты: без
+          // этого блока и диаграмма, и строки жмутся к верху, а треть кадра
+          // под ними остаётся пустой (правка по итогам осмотра скриншотов).
+          <div className="flex flex-1 flex-col justify-center gap-sp5">
+            <SegmentsScene
+              segments={BRIDGE_AFTER_1_SCENE.segments}
+              collapseLabel={BRIDGE_AFTER_1_SCENE.collapse}
+            />
 
-            <ElementReveal index="02" title="Что ему сказать" className="mt-sp4" />
-            <Bridge blocks={BRIDGE2} delay={1.05} className="mt-sp5" />
-          </>
+            <div className="flex flex-col gap-sp3">
+              {BRIDGE_AFTER_1.map((block, i) => (
+                <motion.p
+                  key={block.text}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: DUR.ui, ease: EASE_OUT, delay: bridgeDelays[i] }}
+                  className={
+                    block.kind === 'quote'
+                      ? 'on-scene border-l-2 border-gold pl-sp3 text-[19px] leading-snug font-semibold text-ink'
+                      : block.kind === 'lead'
+                        ? 'on-scene max-w-[34ch] text-[19px] leading-snug font-semibold text-ink'
+                        : 'on-scene max-w-[38ch] text-[16px] leading-relaxed text-ink-2'
+                  }
+                >
+                  {block.kind === 'quote' ? `«${block.text}»` : block.text}
+                </motion.p>
+              ))}
+            </div>
+          </div>
         )}
 
         {phase === 'video' && (
@@ -68,75 +100,30 @@ export function Lab2Screen({ onNext }: { onNext: () => void }) {
             </h1>
             <div className="mt-sp5">
               <VideoBlock
-                video={config.videos.v2}
+                video={video2}
                 protocolNo="02"
                 title="Оффер и объявления"
                 seekTo={seekTo}
                 eventPrefix="video2"
-                onProgress={(share) => mark('video_2_progress', share)}
-                onCompleted={() => {
-                  mark('video_2_completed', true)
-                  setPhase('reward')
+                onProgress={(share) => {
+                  mark('video_2_started', true)
+                  mark('video_2_progress', share)
+                  mark('video_2_seconds', share * video2.duration)
                 }}
+                onCompleted={() => mark('video_2_completed', true)}
               />
             </div>
           </motion.div>
         )}
-
-        {phase === 'reward' && (
-          <>
-            <p className="label-mono text-[var(--acid)]">получено</p>
-            <h1 className="display-xl on-scene mt-sp2 text-ink">Предложение</h1>
-            <div className="mt-sp5">
-              <NodeRail step="lab2" dramatic />
-            </div>
-            <p className="on-scene mt-sp5 max-w-[34ch] text-[16px] leading-relaxed text-ink">
-              Теперь у тебя два рабочих инструмента. Осталось довести гипотезу до того, что человек
-              увидит после клика.
-            </p>
-
-            <div className="flex-1" />
-
-            <RewardBlock
-              number="02"
-              title="Офферы и объявления"
-              hint="Работает на анализе из первого протокола: соберёт офферы, заголовки и объявления и покажет, из чего вырос каждый текст."
-              taken={assistant_2_opened}
-              ready={assistantReady}
-              className="mt-sp4"
-            />
-          </>
-        )}
       </div>
 
       <BottomBar>
-        {phase === 'bridge' && (
-          <Button onClick={() => setPhase('video')}>Превратить это в предложение</Button>
-        )}
+        {phase === 'bridge' && <Button onClick={() => setPhase('video')}>{CTA.buildOffer}</Button>}
         {phase === 'video' && (
-          <Button disabled={!video_2_completed} onClick={() => setPhase('reward')}>
+          <Button disabled={!video_2_completed} onClick={onNext}>
             {video_2_completed ? 'Забрать награду' : 'Сначала протокол 02'}
           </Button>
         )}
-        {phase === 'reward' &&
-          (assistant_2_opened ? (
-            <Button onClick={onNext}>Получить допуск</Button>
-          ) : (
-            <>
-              <Button
-                onClick={() => {
-                  track('assistant2_clicked')
-                  mark('assistant_2_opened', true)
-                  if (assistantReady) openExternal(config.assistant2Url)
-                }}
-              >
-                Забрать ассистента
-              </Button>
-              <p className="mt-sp2 text-center text-[14px] leading-snug text-ink-2">
-                Попробуй прямо сейчас на своём проекте.
-              </p>
-            </>
-          ))}
       </BottomBar>
     </Screen>
   )

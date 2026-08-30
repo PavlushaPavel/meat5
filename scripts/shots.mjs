@@ -1,5 +1,5 @@
 /**
- * Снимает все девять состояний и механически ищет дефекты вёрстки.
+ * Снимает все одиннадцать состояний и механически ищет дефекты вёрстки.
  *
  * Проверка глазами обязательна, но она пропускает то, что видно только по числам:
  * горизонтальный скролл, элемент за границей вьюпорта, контент под кнопкой действия.
@@ -14,38 +14,46 @@ const OUT = '.review'
 /** iPhone 14: самый ходовой размер, на котором это будут открывать. */
 const VIEWPORT = { width: 390, height: 844 }
 
-/** Состояние прогресса, при котором экран показывает свою основную фазу. */
+/** Состояние прогресса, при котором экран показывает свою основную фазу (SPEC.md §32). */
 const done = {
   intro_completed: true,
+  city_completed: true,
   video_1_completed: true,
   assistant_1_opened: true,
   video_2_completed: true,
   assistant_2_opened: true,
+  quiz_started: true,
   quiz_completed: true,
   video_3_completed: true,
   result_site_opened: true,
 }
 
-/** Голосовые сцены снимаем дважды: до нажатия play и во время реплики. */
-const PLAY = 'button[aria-label="Слушать"]'
+/**
+ * Сообщение снимаем дважды: карточка до нажатия и пролёт по городу во время реплики.
+ * Действие — список селекторов: часть состояний состоит из нескольких фаз подряд,
+ * и до нужного кадра надо дойти теми же кнопками, что нажимает человек.
+ */
+const LISTEN = ['button:has-text("Прослушать сообщение")']
 
 const STATES = [
-  ['1-city', { step: 'city' }],
-  ['1b-city-voice', { step: 'city' }, PLAY],
-  ['1c-city-reveal', { step: 'city' }, 'button:has-text("Пропустить")'],
-  ['2-lab1', { step: 'lab1', ...done }],
-  ['2b-lab1-bridge', { step: 'lab1', ...done, video_1_completed: false }],
-  ['3-reward1', { step: 'reward1', ...done, assistant_1_opened: false }],
-  ['4-lab2', { step: 'lab2', ...done }],
-  ['4b-lab2-bridge', { step: 'lab2', ...done, video_2_completed: false }],
-  ['5-access', { step: 'access', ...done, quiz_completed: false }],
-  ['5b-quiz', { step: 'access', ...done, quiz_completed: false }, 'button:has-text("Получить допуск")'],
-  ['6-lab3', { step: 'lab3', ...done }],
-  ['6b-lab3-bridge', { step: 'lab3', ...done, video_3_completed: false }],
-  ['7-bundle', { step: 'bundle', ...done, result_site_opened: false }],
-  ['7b-payoff', { step: 'bundle', ...done }],
-  ['8-offer', { step: 'offer', ...done }],
-  ['9-purchased', { step: 'purchased', ...done }],
+  ['1-message', { step: 'message' }],
+  ['1b-message-voice', { step: 'message' }, LISTEN],
+  ['2-city', { step: 'city', ...done }],
+  ['3-lab1-bridge', { step: 'lab1', ...done, video_1_completed: false }],
+  ['3b-lab1-video', { step: 'lab1', ...done }],
+  ['4-reward1', { step: 'reward1', ...done, assistant_1_opened: false }],
+  ['5-lab2-bridge', { step: 'lab2', ...done, video_2_completed: false }],
+  ['5b-lab2-video', { step: 'lab2', ...done }],
+  ['6-reward2', { step: 'reward2', ...done, assistant_2_opened: false }],
+  ['7-access-barrier', { step: 'access', ...done, quiz_completed: false, quiz_started: false }],
+  ['7b-access-door', { step: 'access', ...done, quiz_completed: false, quiz_started: false }, ['button:has-text("Дальше")', 'button:has-text("Дальше")']],
+  ['7c-quiz', { step: 'access', ...done, quiz_completed: false, quiz_started: true }],
+  ['8-lab3-bridge', { step: 'lab3', ...done, video_3_completed: false }],
+  ['8b-lab3-video', { step: 'lab3', ...done }],
+  ['9-bundle-assemble', { step: 'bundle', ...done, result_site_opened: false }],
+  ['9b-bundle-payoff', { step: 'bundle', ...done }],
+  ['10-offer', { step: 'offer', ...done }],
+  ['11-purchased', { step: 'purchased', ...done, purchased: true }],
 ]
 
 await mkdir(OUT, { recursive: true })
@@ -55,14 +63,32 @@ const problems = []
 for (const [name, state, action] of STATES) {
   const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: 2 })
   await context.addInitScript((s) => {
-    localStorage.setItem('traffic-city-progress', JSON.stringify({ state: s, version: 1 }))
-  }, { quiz_lives: 5, quiz_attempts: 0, missed: [], timestamps: {}, video_1_progress: 1, video_2_progress: 1, video_3_progress: 1, ...state })
+    localStorage.setItem('traffic-city-progress', JSON.stringify({ state: s, version: 2 }))
+  }, {
+    quiz_lives: 5,
+    quiz_attempts: 0,
+    quiz_current_question: 0,
+    quiz_wrong_topics: [],
+    quiz_missed: [],
+    review: null,
+    created_at: Date.now(),
+    updated_at: Date.now(),
+    video_1_progress: 1,
+    video_2_progress: 1,
+    video_3_progress: 1,
+    ...state,
+  })
   const page = await context.newPage()
   await page.goto(BASE, { waitUntil: 'networkidle' })
   // Сцены анимированы: даём кадру доиграть вход, иначе снимем полупрозрачное состояние.
-  await page.waitForTimeout(1800)
-  if (action) {
-    await page.click(action)
+  // Сцены раскрываются волной: снимок раньше времени поймает полупрозрачное
+  // промежуточное состояние, а не кадр, который увидит человек.
+  await page.waitForTimeout(4200)
+  for (const selector of action ?? []) {
+    // Фазы раскрываются анимацией: кнопка появляется не сразу и сначала выключена.
+    const button = page.locator(selector).first()
+    await button.waitFor({ state: 'visible', timeout: 15000 })
+    await button.click({ timeout: 15000 })
     await page.waitForTimeout(2200)
   }
   await page.screenshot({ path: `${OUT}/${name}.png`, fullPage: false })
@@ -106,7 +132,7 @@ for (const [name, state, action] of STATES) {
 await browser.close()
 
 if (problems.length === 0) {
-  console.log('Дефектов вёрстки не найдено на всех девяти состояниях.')
+  console.log('Дефектов вёрстки не найдено на всех одиннадцати состояниях.')
 } else {
   for (const [name, list] of problems) {
     console.log(`\n${name}:`)

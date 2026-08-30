@@ -26,7 +26,15 @@ interface TelegramWebApp {
   contentSafeAreaInset?: SafeAreaInset
   colorScheme?: string
   themeParams?: Record<string, string>
-  initDataUnsafe?: { user?: { id: number; first_name?: string; language_code?: string } }
+  initDataUnsafe?: {
+    user?: { id: number; first_name?: string; language_code?: string }
+    /**
+     * Единственный канал атрибуции, который Telegram Mini App реально получает:
+     * до 64 символов, только A-Za-z0-9_- (см. lib/attribution.ts). UTM-меток
+     * в URL Mini App не видит — их пробрасывают только через этот параметр.
+     */
+    start_param?: string
+  }
   setHeaderColor?: (color: string) => void
   setBackgroundColor?: (color: string) => void
   disableVerticalSwipes?: () => void
@@ -130,4 +138,9 @@ export function setBackButton(visible: boolean, onClick?: () => void): () => voi
 
 export function telegramUserId(): number | null {
   return wa()?.initDataUnsafe?.user?.id ?? null
+}
+
+/** Сырой start_param от Telegram — источник атрибуции №1 (lib/attribution.ts). */
+export function telegramStartParam(): string | null {
+  return wa()?.initDataUnsafe?.start_param ?? null
 }

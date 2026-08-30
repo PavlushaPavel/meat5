@@ -8,16 +8,29 @@ import { Check } from '@phosphor-icons/react'
  * Три узла связки — ЕДИНСТВЕННЫЙ индикатор прогресса (DESIGN.md §2.9).
  * Второй шкалы, процента или прибора в шапке быть не должно: они отбирают
  * у связки ровно тот смысл, ради которого построена воронка.
+ *
+ * Маршрут не показывается заранее (DESIGN.md §8.2): закрытый узел не называет
+ * себя, он показывается как «?». Открытый узел — название и галочка. Текущий —
+ * название без галочки: человек имеет право знать, чем занят прямо сейчас,
+ * но не то, что будет через два шага.
  */
 export function NodeRail({
   step,
   dramatic = false,
   onScene = false,
+  revealAll = false,
 }: {
   step: StepId
   dramatic?: boolean
   /** onScene — рейка лежит поверх фотографии и ей нужна собственная подложка. */
   onScene?: boolean
+  /**
+   * revealAll — показывает названия всех узлов, включая ещё не открытые.
+   * Единственное законное место — мост перед Видео 3 (DESIGN.md §8.2, SPEC.md
+   * §20), где «КОМУ ✓ / ЧТО СКАЗАТЬ ✓ / КУДА ВЕСТИ ?» показывается целиком
+   * осознанно: это и есть содержание сцены, а не случайная утечка маршрута.
+   */
+  revealAll?: boolean
 }) {
   return (
     <div
@@ -39,6 +52,7 @@ export function NodeRail({
       {NODES.map((node, idx) => {
         const state = nodeState(idx, step)
         const open = state === 'open'
+        const hidden = state === 'closed' && !revealAll
         return (
           <motion.div
             key={node.id}
@@ -59,7 +73,7 @@ export function NodeRail({
                 open ? 'text-[var(--acid)]' : state === 'current' ? 'text-gold' : 'text-ink-3',
               )}
             >
-              {node.label}
+              {hidden ? '?' : node.label}
             </span>
             <span className="flex h-4 items-center">
               {open ? (

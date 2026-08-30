@@ -1,11 +1,17 @@
 import type { ReactNode } from 'react'
 import { cn } from '../lib/cn'
+import { useProgress } from '../store/progress'
 
 /**
  * Оболочка экрана: одна колонка, неизменные поля, место под нижнюю панель.
  *
  * Высота берётся из --tg-vh, а не из 100vh: в Telegram низ экрана занят чатом,
  * и 100vh уезжает под него вместе с кнопкой действия.
+ *
+ * Верхний паддинг резервирует место под TopBar (ui/TopBar.tsx, ТЗ §30) на
+ * всех состояниях, кроме `message`: там панели нет вовсе (DESIGN.md §8.1),
+ * поэтому и резервировать под неё место не нужно. Саму панель монтирует
+ * App.tsx — здесь только расчёт отступа, чтобы контент не заезжал под неё.
  */
 export function Screen({
   children,
@@ -17,6 +23,8 @@ export function Screen({
   /** bare — экран сам рисует фон во всю ширину (сцена города, кадр лаборатории). */
   bare?: boolean
 }) {
+  const hasTopBar = useProgress((s) => s.step !== 'message')
+
   return (
     <main
       className={cn(
@@ -27,7 +35,9 @@ export function Screen({
       )}
       style={{
         // max(): в браузере работает env(), в Telegram — присланные клиентом зоны.
-        paddingTop: 'max(env(safe-area-inset-top), var(--tg-sa-top))',
+        paddingTop: hasTopBar
+          ? 'calc(max(env(safe-area-inset-top), var(--tg-sa-top)) + var(--top-h))'
+          : 'max(env(safe-area-inset-top), var(--tg-sa-top))',
         paddingBottom:
           'calc(max(env(safe-area-inset-bottom), var(--tg-sa-bottom)) + var(--tg-gap-bottom) + var(--bar-h))',
       }}

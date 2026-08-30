@@ -10,6 +10,9 @@ import { cn } from '../lib/cn'
  * следующий шаг, который появляется после. Поэтому инструмент занимает кадр,
  * а не лежит вторичной карточкой сбоку: иначе человек проходит мимо подарка,
  * и вся взаимность, ради которой он выдан, не срабатывает.
+ *
+ * `title`/`hint` приходят целиком из copy.ts (REWARD_1.tool/toolHint или
+ * REWARD_2.tool/toolHint) — экран не сочиняет собственную подпись поверх них.
  */
 export function RewardBlock({
   number,
@@ -43,15 +46,12 @@ export function RewardBlock({
             'label-mono grid h-12 w-12 shrink-0 place-items-center rounded-chip text-[13px]',
             ready
               ? 'bg-[color-mix(in_oklab,var(--acid)_18%,transparent)] text-[var(--acid)]'
-              : 'bg-raised text-ink-3',
+              : 'bg-raised text-ink-2',
           )}
         >
           {number}
         </span>
-        <div className="min-w-0 flex-1">
-          <p className="label-mono text-ink-3">ассистент {number}</p>
-          <p className="mt-1 text-[19px] leading-tight font-semibold text-ink">{title}</p>
-        </div>
+        <p className="min-w-0 flex-1 text-[19px] leading-tight font-semibold text-ink">{title}</p>
         {taken && <ArrowUpRight size={20} weight="bold" aria-hidden className="shrink-0 text-[var(--acid)]" />}
       </div>
 

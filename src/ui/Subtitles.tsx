@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'motion/react'
-import type { Line } from '../content/script'
+import type { Line } from '../content/copy'
 import { DUR, EASE_OUT } from '../lib/motion'
 import { cn } from '../lib/cn'
 

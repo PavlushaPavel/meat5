@@ -1,197 +1,93 @@
-import { useEffect } from 'react'
+import { useState } from 'react'
 import { motion } from 'motion/react'
 import { Screen } from '../ui/Screen'
 import { Scene } from '../ui/Scene'
-import { Subtitles } from '../ui/Subtitles'
-import { VoiceBar } from '../ui/VoiceBar'
-import { Character } from '../ui/Character'
-import { NodeRail } from '../ui/NodeRail'
+import { Panel } from '../ui/Panel'
 import { Button } from '../ui/Button'
 import { BottomBar } from '../ui/BottomBar'
-import { BIG_PROMISE, CITY_SCRIPT } from '../content/script'
-import { config } from '../config'
-import { useVoice } from '../lib/useVoice'
+import { CTA, CITY } from '../content/copy'
 import { track } from '../lib/analytics'
 import { useProgress } from '../store/progress'
 import { DUR, EASE_OUT } from '../lib/motion'
 import { asset } from '../lib/asset'
 
 /**
- * Экран 1. Вход в Город трафика.
+ * Экран 2. Город трафика, вход в первый этап (STATE02, SPEC.md §6).
  *
- * ДОРОГОЙ МОУШН №1: камера идёт по городу непрерывно, кадры не переключаются
- * рывком, а перетекают друг в друга на репликах-поворотах.
+ * Короткая сцена без единого слова голоса (голос во всём приложении звучит
+ * ровно один раз, в MessageScreen): знакомый район Директа, поток трафика
+ * выходит из него и уходит дальше — карточка и подпись доводят эту мысль
+ * текстом, а не голосом.
  *
- * Большое обещание стоит ТЕКСТОМ, а не только в голосе: «Пропустить» нажмут
- * многие, и человек не должен уйти в лабораторию, не поняв, ради чего всё это.
+ * По нажатию кнопки — не мгновенная смена экрана, а закрывающиеся створки:
+ * тот же визуальный язык, что открывает лабораторию в Lab1Screen, но в
+ * обратную сторону. Только после того как створки сомкнутся, роутер получает
+ * onNext() — вход в Трафик Лаб читается как одно движение, а не как обрыв кадра.
  */
-const FRAMES = ['world/city-gate.webp', 'world/city-districts.webp', 'world/city-conversions.webp']
-
 export function CityScreen({ onNext }: { onNext: () => void }) {
   const mark = useProgress((s) => s.mark)
-  const voice = useVoice(CITY_SCRIPT, config.voice.city || undefined)
-  const revealed = voice.done
-  const frame = Math.min(Math.floor(voice.index / 5), FRAMES.length - 1)
+  const [leaving, setLeaving] = useState(false)
 
-  useEffect(() => {
-    if (voice.playing) track('city_started')
-  }, [voice.playing])
-
-  useEffect(() => {
-    if (!revealed) return
-    track('city_completed')
-    mark('intro_completed', true)
-  }, [revealed, mark])
+  const handleFindElement = () => {
+    if (leaving) return
+    mark('city_completed', true)
+    track('lab_entered')
+    setLeaving(true)
+  }
 
   return (
     <Screen bare>
-      {revealed ? (
-        <Scene src={asset('world/lab-exterior.webp')} align="top" still />
-      ) : (
-        <CityFlight frame={frame} />
-      )}
-      {!revealed && <Character height="56vh" delay={0.15} />}
+      <Scene src={asset('world/city-districts.webp')} align="top" />
 
       <div className="relative z-20 flex flex-1 flex-col px-[var(--gutter)] pt-sp5">
-        <motion.h1
+        <div className="flex-1" />
+
+        <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: DUR.scene, ease: EASE_OUT }}
-          className="display-xl on-scene max-w-[7ch] text-ink"
         >
-          {revealed ? 'Трафик Лаб' : 'Город трафика'}
-        </motion.h1>
-
-        {/* Кадр у закрытой лаборатории: сюда попадают и те, кто дослушал,
-            и те, кто нажал «Пропустить». Обещание обязано быть здесь. */}
-        {revealed && (
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: DUR.scene, ease: EASE_OUT, delay: 0.1 }}
-            className="relative mt-sp4"
-          >
-            {/* Подложка: обещание лежит на светящемся городе и без неё тонет. */}
-            <div
-              aria-hidden
-              className="pointer-events-none absolute -inset-x-[var(--gutter)] -top-sp4 -bottom-sp6 -z-10"
-              style={{
-                background:
-                  'linear-gradient(to bottom, color-mix(in oklab, var(--color-ground-deep) 40%, transparent) 0%, color-mix(in oklab, var(--color-ground-deep) 70%, transparent) 45%, color-mix(in oklab, var(--color-ground-deep) 62%, transparent) 100%)',
-              }}
-            />
-            <span className="label-mono inline-block rounded-chip border border-alert/60 bg-[color-mix(in_oklab,var(--color-ground-deep)_80%,transparent)] px-sp2 py-[6px] text-alert backdrop-blur-[4px]">
-              доступ ограничен
-            </span>
-
-            <p className="on-scene mt-sp4 max-w-[30ch] text-[19px] leading-snug font-semibold text-ink">
-              {BIG_PROMISE.headline}
+          <Panel className="on-scene">
+            <p className="display-m text-ink">{CITY.card}</p>
+            <p className="mt-sp3 whitespace-pre-line text-[15px] leading-relaxed text-ink-2">
+              {CITY.support}
             </p>
-            <p className="on-scene mt-sp3 max-w-[38ch] text-[15px] leading-relaxed text-ink-2">
-              {BIG_PROMISE.support}
-            </p>
-
-            <p className="on-scene mt-sp4 max-w-[32ch] text-[15px] leading-relaxed text-ink">
-              За дверью три элемента рекламной связки. Ни один пока не открыт.
-            </p>
-            <div className="mt-sp3">
-              <NodeRail step="city" onScene />
-            </div>
-          </motion.div>
-        )}
-
-        <div className="flex-1" />
-
-        {!revealed && (
-          <>
-            {voice.started ? (
-              <Subtitles line={voice.line} className="mb-sp4" />
-            ) : (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: DUR.scene, ease: EASE_OUT, delay: 0.25 }}
-                className="relative mb-sp4"
-              >
-                <div
-                  aria-hidden
-                  className="pointer-events-none absolute -inset-x-[var(--gutter)] -top-sp6 -bottom-sp5 -z-10"
-                  style={{
-                    background:
-                      'linear-gradient(to bottom, transparent 0%, color-mix(in oklab, var(--color-ground-deep) 58%, transparent) 34%, color-mix(in oklab, var(--color-ground-deep) 72%, transparent) 100%)',
-                  }}
-                />
-                <p className="on-scene max-w-[26ch] text-[22px] leading-[1.24] font-semibold text-ink">
-                  {BIG_PROMISE.headline}
-                </p>
-                <p className="on-scene mt-sp3 max-w-[34ch] text-[15px] leading-relaxed text-ink-2">
-                  {BIG_PROMISE.listen}
-                </p>
-              </motion.div>
-            )}
-
-            <VoiceBar
-              playing={voice.playing}
-              progress={voice.progress}
-              remaining={voice.remaining}
-              rate={voice.rate}
-              onToggle={voice.toggle}
-              onCycleRate={voice.cycleRate}
-              className="mb-sp4"
-            />
-          </>
-        )}
+          </Panel>
+        </motion.div>
       </div>
 
       <BottomBar>
-        {revealed ? (
-          <Button onClick={onNext}>Войти в лабораторию</Button>
-        ) : (
-          <Button variant="ghost" onClick={voice.finish}>
-            Пропустить
-          </Button>
-        )}
+        <Button disabled={leaving} onClick={handleFindElement}>
+          {CTA.findElement}
+        </Button>
       </BottomBar>
+
+      {leaving && <ClosingDoors onDone={onNext} />}
     </Screen>
   )
 }
 
-/**
- * Пролёт по городу: кадры не сменяются рывком, а перетекают, и каждый всё это
- * время медленно наезжает. Получается движение камеры, а не слайдшоу.
- */
-function CityFlight({ frame }: { frame: number }) {
+/** Створки лаборатории, но навстречу друг другу: закрывают кадр перед переходом. */
+function ClosingDoors({ onDone }: { onDone: () => void }) {
   return (
-    <div className="absolute inset-0 z-0 overflow-hidden">
-      {FRAMES.map((src, i) => (
-        <motion.img
-          key={src}
-          src={asset(src)}
-          alt=""
-          aria-hidden
-          decoding="async"
-          initial={{ opacity: i === 0 ? 1 : 0, scale: 1.04, y: '0%' }}
-          animate={
-            i === frame
-              ? { opacity: 1, scale: 1.16, y: '-4%' }
-              : { opacity: 0, scale: 1.04, y: '0%' }
-          }
-          transition={{
-            opacity: { duration: 1.2, ease: EASE_OUT },
-            scale: { duration: 26, ease: 'linear' },
-            y: { duration: 26, ease: 'linear' },
+    <div aria-hidden className="pointer-events-none fixed inset-0 z-50 overflow-hidden">
+      {(['left', 'right'] as const).map((side, i) => (
+        <motion.div
+          key={side}
+          initial={{ x: side === 'left' ? '-100%' : '100%' }}
+          animate={{ x: '0%' }}
+          transition={{ duration: 0.5, ease: EASE_OUT, delay: 0.04 }}
+          onAnimationComplete={i === 0 ? onDone : undefined}
+          className="absolute top-0 h-full w-1/2 bg-ground-deep motion-reduce:hidden"
+          style={{
+            [side]: 0,
+            boxShadow:
+              side === 'left'
+                ? '8px 0 60px -10px rgba(249,183,6,0.35)'
+                : '-8px 0 60px -10px rgba(249,183,6,0.35)',
           }}
-          className="absolute inset-0 h-full w-full object-cover object-top will-change-transform motion-reduce:!scale-100 motion-reduce:!translate-y-0"
         />
       ))}
-      <div
-        aria-hidden
-        className="absolute inset-0"
-        style={{
-          background:
-            'linear-gradient(to bottom, color-mix(in oklab, var(--color-ground-deep) 62%, transparent) 0%, color-mix(in oklab, var(--color-ground-deep) 12%, transparent) 26%, color-mix(in oklab, var(--color-ground-deep) 34%, transparent) 62%, color-mix(in oklab, var(--color-ground) 88%, transparent) 100%)',
-        }}
-      />
     </div>
   )
 }

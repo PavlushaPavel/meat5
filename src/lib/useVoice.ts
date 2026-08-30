@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { Line } from '../content/script'
+import type { Line } from '../content/copy'
 
 /**
  * Голосовое сообщение сцены.
@@ -9,6 +9,9 @@ import type { Line } from '../content/script'
  * длительность файла, и переписывать сценарий не придётся.
  *
  * Автоплей не делаем: он запрещён браузерами со звуком и запрещён нами (DESIGN.md §2.12).
+ *
+ * Обязательный набор управления (SPEC.md §4): пауза (toggle), mute, replay,
+ * видимый прогресс (progress/elapsed) — плюс скорость 1×/1.5×/2× (cycleRate).
  */
 export function useVoice(lines: Line[], audioUrl?: string) {
   const totalScript = lines.reduce((sum, l) => sum + l.hold, 0)
@@ -17,6 +20,7 @@ export function useVoice(lines: Line[], audioUrl?: string) {
   const [playing, setPlaying] = useState(false)
   const [duration, setDuration] = useState(totalScript)
   const [rate, setRate] = useState(1)
+  const [muted, setMuted] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const rafRef = useRef<number | undefined>(undefined)
   const rateRef = useRef(1)
@@ -27,6 +31,7 @@ export function useVoice(lines: Line[], audioUrl?: string) {
   useEffect(() => {
     if (!audioUrl) return
     const el = new Audio(audioUrl)
+    el.muted = muted
     audioRef.current = el
     const onMeta = () => setDuration(el.duration * 1000)
     el.addEventListener('loadedmetadata', onMeta)
@@ -35,6 +40,9 @@ export function useVoice(lines: Line[], audioUrl?: string) {
       el.removeEventListener('loadedmetadata', onMeta)
       audioRef.current = null
     }
+    // muted намеренно не в зависимостях: элемент создаётся один раз на audioUrl,
+    // дальше состояние мьюта applies через toggleMute.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [audioUrl])
 
   const tick = useCallback(() => {
@@ -89,6 +97,30 @@ export function useVoice(lines: Line[], audioUrl?: string) {
     })
   }, [])
 
+  /** Mute не глушит сценарный таймер — он только про звук, кадр идёт как шёл. */
+  const toggleMute = useCallback(() => {
+    setMuted((m) => {
+      const next = !m
+      if (audioRef.current) audioRef.current.muted = next
+      return next
+    })
+  }, [])
+
+  /** Заново с начала, не выходя из сцены: та же дорожка, та же скорость. */
+  const replay = useCallback(() => {
+    offset.current = 0
+    elapsedRef.current = 0
+    setElapsed(0)
+    const el = audioRef.current
+    if (el) {
+      el.currentTime = 0
+      el.playbackRate = rateRef.current
+      void el.play()
+    }
+    startedAt.current = performance.now()
+    setPlaying(true)
+  }, [])
+
   /** Досмотреть сразу: пропуск не должен требовать ждать конца реплики. */
   const finish = useCallback(() => {
     audioRef.current?.pause()
@@ -120,6 +152,9 @@ export function useVoice(lines: Line[], audioUrl?: string) {
     finish,
     rate,
     cycleRate,
+    muted,
+    toggleMute,
+    replay,
     remaining,
     index,
     line: lines[index],

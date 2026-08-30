@@ -23,20 +23,22 @@ const SIZES = [
 ]
 
 const done = {
-  intro_completed: true, video_1_completed: true, assistant_1_opened: true,
-  video_2_completed: true, assistant_2_opened: true, quiz_completed: true,
+  intro_completed: true, city_completed: true, video_1_completed: true, assistant_1_opened: true,
+  video_2_completed: true, assistant_2_opened: true, quiz_started: true, quiz_completed: true,
   video_3_completed: true, result_site_opened: true,
 }
 const STATES = [
-  ['city', { step: 'city' }],
+  ['message', { step: 'message' }],
+  ['city', { step: 'city', ...done }],
   ['lab1', { step: 'lab1', ...done, video_1_completed: false }],
   ['reward1', { step: 'reward1', ...done, assistant_1_opened: false }],
   ['lab2', { step: 'lab2', ...done }],
-  ['access', { step: 'access', ...done, quiz_completed: false }],
+  ['reward2', { step: 'reward2', ...done, assistant_2_opened: false }],
+  ['access', { step: 'access', ...done, quiz_completed: false, quiz_started: false }],
   ['lab3', { step: 'lab3', ...done }],
   ['bundle', { step: 'bundle', ...done, result_site_opened: false }],
   ['offer', { step: 'offer', ...done }],
-  ['purchased', { step: 'purchased', ...done }],
+  ['purchased', { step: 'purchased', ...done, purchased: true }],
 ]
 
 /**
@@ -108,8 +110,18 @@ for (const [label, w, h] of SIZES) {
   for (const [name, state] of STATES) {
     const ctx = await browser.newContext({ viewport: { width: w, height: h } })
     await ctx.addInitScript(
-      (s) => localStorage.setItem('traffic-city-progress', JSON.stringify({ state: s, version: 1 })),
-      { quiz_lives: 5, quiz_attempts: 0, missed: [], timestamps: {}, ...state },
+      (s) => localStorage.setItem('traffic-city-progress', JSON.stringify({ state: s, version: 2 })),
+      {
+        quiz_lives: 5,
+        quiz_attempts: 0,
+        quiz_current_question: 0,
+        quiz_wrong_topics: [],
+        quiz_missed: [],
+        review: null,
+        created_at: Date.now(),
+        updated_at: Date.now(),
+        ...state,
+      },
     )
     const page = await ctx.newPage()
     await page.goto(BASE, { waitUntil: 'networkidle' })
@@ -135,8 +147,18 @@ for (const [name, state] of STATES) {
   await ctx.route('**/telegram-web-app.js', (route) => route.abort())
   await ctx.addInitScript(TELEGRAM_STUB(640, 56, 34))
   await ctx.addInitScript(
-    (s) => localStorage.setItem('traffic-city-progress', JSON.stringify({ state: s, version: 1 })),
-    { quiz_lives: 5, quiz_attempts: 0, missed: [], timestamps: {}, ...state },
+    (s) => localStorage.setItem('traffic-city-progress', JSON.stringify({ state: s, version: 2 })),
+    {
+      quiz_lives: 5,
+      quiz_attempts: 0,
+      quiz_current_question: 0,
+      quiz_wrong_topics: [],
+      quiz_missed: [],
+      review: null,
+      created_at: Date.now(),
+      updated_at: Date.now(),
+      ...state,
+    },
   )
   const page = await ctx.newPage()
   await page.goto(BASE, { waitUntil: 'networkidle' })

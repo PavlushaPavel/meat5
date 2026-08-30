@@ -19,10 +19,12 @@ const VIEWPORT = { width: 390, height: 844 }
 
 const done = {
   intro_completed: true,
+  city_completed: true,
   video_1_completed: true,
   assistant_1_opened: true,
   video_2_completed: true,
   assistant_2_opened: true,
+  quiz_started: true,
   quiz_completed: true,
   video_3_completed: true,
   result_site_opened: true,
@@ -31,22 +33,24 @@ const done = {
 /** Каждая фаза экрана мерится отдельно: текст на них лежит на разных кадрах. */
 const PLAY = 'button[aria-label="Слушать"]'
 const STATES = {
-  '1-city': [{ step: 'city' }],
-  '1b-city-voice': [{ step: 'city' }, PLAY],
-  '1c-city-reveal': [{ step: 'city' }, 'button:has-text("Пропустить")'],
-  '2-lab1-bridge': [{ step: 'lab1', ...done, video_1_completed: false }],
-  '2b-lab1-video': [{ step: 'lab1', ...done }],
-  '3-reward1': [{ step: 'reward1', ...done, assistant_1_opened: false }],
-  '4-lab2-bridge': [{ step: 'lab2', ...done, video_2_completed: false }],
-  '4b-lab2-reward': [{ step: 'lab2', ...done, assistant_2_opened: false }],
-  '5-access-barrier': [{ step: 'access', ...done, quiz_completed: false }],
-  '5b-quiz': [{ step: 'access', ...done, quiz_completed: false }, 'button:has-text("Получить допуск")'],
-  '6-lab3-bridge': [{ step: 'lab3', ...done, video_3_completed: false }],
-  '6b-lab3-video': [{ step: 'lab3', ...done }],
-  '7-bundle': [{ step: 'bundle', ...done, result_site_opened: false }],
-  '7b-payoff': [{ step: 'bundle', ...done }],
-  '8-offer': [{ step: 'offer', ...done }],
-  '9-purchased': [{ step: 'purchased', ...done }],
+  '1-message': [{ step: 'message' }],
+  '1b-message-voice': [{ step: 'message' }, PLAY],
+  '1c-message-skip': [{ step: 'message' }, 'button:has-text("Пропустить")'],
+  '2-city': [{ step: 'city', ...done }],
+  '3-lab1-bridge': [{ step: 'lab1', ...done, video_1_completed: false }],
+  '3b-lab1-video': [{ step: 'lab1', ...done }],
+  '4-reward1': [{ step: 'reward1', ...done, assistant_1_opened: false }],
+  '5-lab2-bridge': [{ step: 'lab2', ...done, video_2_completed: false }],
+  '5b-lab2-video': [{ step: 'lab2', ...done }],
+  '6-reward2': [{ step: 'reward2', ...done, assistant_2_opened: false }],
+  '7-access-barrier': [{ step: 'access', ...done, quiz_completed: false, quiz_started: false }],
+  '7b-quiz': [{ step: 'access', ...done, quiz_completed: false, quiz_started: false }, 'button:has-text("Получить допуск")'],
+  '8-lab3-bridge': [{ step: 'lab3', ...done, video_3_completed: false }],
+  '8b-lab3-video': [{ step: 'lab3', ...done }],
+  '9-bundle-assemble': [{ step: 'bundle', ...done, result_site_opened: false }],
+  '9b-bundle-payoff': [{ step: 'bundle', ...done }],
+  '10-offer': [{ step: 'offer', ...done }],
+  '11-purchased': [{ step: 'purchased', ...done, purchased: true }],
 }
 
 const luminance = ([r, g, b]) => {
@@ -73,12 +77,24 @@ for (const name of names) {
   const [state, action] = entry
   const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: 1 })
   await context.addInitScript(
-    (s) => localStorage.setItem('traffic-city-progress', JSON.stringify({ state: s, version: 1 })),
-    { quiz_lives: 5, quiz_attempts: 0, missed: [], timestamps: {}, ...state },
+    (s) => localStorage.setItem('traffic-city-progress', JSON.stringify({ state: s, version: 2 })),
+    {
+      quiz_lives: 5,
+      quiz_attempts: 0,
+      quiz_current_question: 0,
+      quiz_wrong_topics: [],
+      quiz_missed: [],
+      review: null,
+      created_at: Date.now(),
+      updated_at: Date.now(),
+      ...state,
+    },
   )
   const page = await context.newPage()
   await page.goto(BASE, { waitUntil: 'networkidle' })
-  await page.waitForTimeout(1600)
+  // Сцены раскрываются волной, самая длинная — награда: пока карточка едет,
+  // её фон полупрозрачен, и замер поймает не панель, а персонажа за ней.
+  await page.waitForTimeout(4200)
   if (action) {
     await page.click(action).catch(() => {})
     await page.waitForTimeout(2200)

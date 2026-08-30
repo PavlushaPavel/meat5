@@ -19,6 +19,7 @@ export function Character({
   delay = 0,
   pose = 'point',
   bleed = true,
+  pin = false,
 }: {
   className?: string
   side?: 'left' | 'right'
@@ -32,11 +33,28 @@ export function Character({
    * быть виден целиком, иначе выглядит обрезанным, а не встроенным в мир.
    */
   bleed?: boolean
+  /**
+   * pin — фигура держится за НИЗ ВИДИМОГО ЭКРАНА (как BottomBar), а не за низ
+   * `main`. На экранах с длинным содержимым `main` может вырасти выше
+   * вьюпорта — тогда «привязанная ко дну контейнера» фигура утекает вниз
+   * вместе с ним, и лицо, которое лежит у самого верха картинки, оказывается
+   * далеко под текстом или под панелью действия. Экраны наград (Reward1/2) —
+   * ровно этот случай: там ведущий одновременно крупный и должен читаться
+   * лицом, поэтому его вертикальная позиция не должна зависеть от того,
+   * сколько текста легло выше него.
+   */
+  pin?: boolean
 }) {
   return (
     // Клип-слой: фигура намеренно уходит за край кадра, но страница от этого
     // не должна получать горизонтальный скролл.
-    <div className="pointer-events-none absolute inset-0 z-10 overflow-hidden">
+    <div
+      className={cn(
+        'pointer-events-none z-10 overflow-hidden',
+        pin ? 'fixed inset-x-0 top-0 mx-auto w-full max-w-[var(--app-max)]' : 'absolute inset-0',
+      )}
+      style={pin ? { bottom: 'var(--tg-gap-bottom)' } : undefined}
+    >
       <motion.img
         src={asset(pose === 'calm' ? 'world/character-calm.webp' : 'world/character-hero.webp')}
         alt=""

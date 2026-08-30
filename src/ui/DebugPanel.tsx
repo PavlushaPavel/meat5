@@ -23,6 +23,9 @@ export function DebugPanel({ onClose }: { onClose: () => void }) {
 
   function jump(step: StepId) {
     haptic('light')
+    // Отладочный прыжок обязан обходить гейтинг (§43) — иначе им нельзя
+    // пользоваться: большинство состояний недостижимо без реального прогресса.
+    progress.mark('debugUnlocked', true)
     progress.go(step)
     setOpen(false)
   }

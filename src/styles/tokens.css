@@ -57,6 +57,10 @@
   --gutter: 20px;
   --app-max: 460px;
   --bar-h: 84px;
+  /* Постоянная верхняя панель (ui/TopBar.tsx, DESIGN.md §5 + ТЗ §30). Не
+     показывается на message (DESIGN.md §8.1), но Screen.tsx резервирует
+     это же значение под неё на всех остальных состояниях. */
+  --top-h: 56px;
 
   --t-press: 140ms;
   --t-ui: 220ms;

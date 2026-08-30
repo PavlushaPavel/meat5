@@ -36,13 +36,20 @@ export function Scene({
           !still && 'animate-[breathe_24s_ease-in-out_infinite_alternate]',
         )}
       />
-      {/* Затемнение под текст: без него субтитры лягут на светящиеся окна города. */}
+      {/*
+        Затемнение под текст: без него субтитры лягут на светящиеся окна
+        города. Нижняя половина растянута дальше и доходит до ПОЛНОСТЬЮ
+        непрозрачного --color-ground к самому краю кадра — раньше стоп был
+        88%, и сцена обрывалась ровной границей там, где кадр физически
+        заканчивался (виден на экране оффера, DESIGN.md §6.1). Теперь низ
+        каждого кадра растворяется в фоне под ним, а не обрезается.
+      */}
       <div
         aria-hidden
         className="absolute inset-0"
         style={{
           background:
-            'linear-gradient(to bottom, color-mix(in oklab, var(--color-ground-deep) 62%, transparent) 0%, color-mix(in oklab, var(--color-ground-deep) 12%, transparent) 26%, color-mix(in oklab, var(--color-ground-deep) 34%, transparent) 62%, color-mix(in oklab, var(--color-ground) 88%, transparent) 100%)',
+            'linear-gradient(to bottom, color-mix(in oklab, var(--color-ground-deep) 62%, transparent) 0%, color-mix(in oklab, var(--color-ground-deep) 12%, transparent) 26%, color-mix(in oklab, var(--color-ground-deep) 30%, transparent) 52%, color-mix(in oklab, var(--color-ground) 62%, transparent) 78%, var(--color-ground) 100%)',
         }}
       />
       {children}

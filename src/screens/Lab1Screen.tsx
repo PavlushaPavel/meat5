@@ -1,18 +1,21 @@
 import { useEffect, useState } from 'react'
-import { motion } from 'motion/react'
+import { AnimatePresence, motion } from 'motion/react'
 import { Screen } from '../ui/Screen'
 import { Scene } from '../ui/Scene'
-import { ElementReveal } from '../ui/ElementReveal'
-import { Bridge, ReadingScrim } from '../ui/Bridge'
+import { Panel } from '../ui/Panel'
+import { ReadingScrim } from '../ui/Bridge'
 import { VideoBlock } from '../ui/VideoBlock'
 import { Button } from '../ui/Button'
 import { BottomBar } from '../ui/BottomBar'
-import { LAB1_BRIDGE } from '../content/script'
+import { CTA, BEFORE_VIDEO_1 } from '../content/copy'
 import { config } from '../config'
-import { track } from '../lib/analytics'
 import { useProgress } from '../store/progress'
-import { DUR, EASE_OUT } from '../lib/motion'
+import { DUR, EASE_OUT, prefersReducedMotion } from '../lib/motion'
 import { asset } from '../lib/asset'
+
+/** Сколько кадр держит каждую из трёх карточек, мс — раскрытие идёт само,
+ * тапать по нему не нужно (SPEC.md §7: маршрут не показывается заранее). */
+const CARD_HOLD = [1500, 1500, 2100]
 
 /**
  * Экран 2. Первый эксперимент.
@@ -20,14 +23,18 @@ import { asset } from '../lib/asset'
  * ДОРОГОЙ МОУШН №2: створки расходятся, жёлтый свет заливает кадр. Открытие
  * города здесь НЕ повторяем — двери открылись, человек уже внутри.
  *
- * Мост читается ТЕКСТОМ, а не голосом: второй голосовой подряд превращает вход
- * в лабораторию в ещё одно ожидание, вместо того чтобы дать делать. На центральном
- * экране в этот момент проявляется первый неизвестный элемент связки.
+ * Мост читается ТЕКСТОМ: три карточки BEFORE_VIDEO_1.cards раскрываются
+ * ПО ОДНОЙ в одном и том же месте кадра (сменяют друг друга, а не
+ * складываются в список — увидеть все три сразу означало бы оглавление),
+ * затем удар — punch, крупно, с переносом строки. Только после этого
+ * появляется кнопка «Разобраться».
  */
 export function Lab1Screen({ onNext }: { onNext: () => void }) {
   const { mark, video_1_completed, review, clearReview } = useProgress()
   const seekTo = review?.step === 'lab1' ? review.at : undefined
   const [phase, setPhase] = useState<'bridge' | 'video'>(video_1_completed ? 'video' : 'bridge')
+  const [step, setStep] = useState(() => (prefersReducedMotion() ? BEFORE_VIDEO_1.cards.length : 0))
+  const video1 = { url: config.video1Url, duration: config.videoDurations.v1, poster: config.videoPosters.v1 }
 
   useEffect(() => {
     if (seekTo === undefined) return
@@ -35,18 +42,64 @@ export function Lab1Screen({ onNext }: { onNext: () => void }) {
     return () => clearReview()
   }, [seekTo, clearReview])
 
+  // Три карточки сменяют друг друга сами; на последней держится удар — до тех
+  // пор, пока человек не нажмёт «Разобраться».
+  useEffect(() => {
+    if (phase !== 'bridge') return
+    if (step >= BEFORE_VIDEO_1.cards.length) return
+    const t = window.setTimeout(() => setStep((s) => s + 1), CARD_HOLD[step])
+    return () => window.clearTimeout(t)
+  }, [phase, step])
+
+  const punchReady = step >= BEFORE_VIDEO_1.cards.length
+
   return (
     <Screen bare>
-      <Scene src={asset('world/lab-interior.webp')} still />
+      {/* Без `still`: кадр дышит, как и остальные сцены воронки — иначе
+          верхние две трети экрана, пока карточки моста ещё не появились,
+          читаются как замёршая фотография, а не как кино (DESIGN.md §5). */}
+      <Scene src={asset('world/lab-interior.webp')} />
       <Doors />
       {phase === 'bridge' && <ReadingScrim />}
 
       <div className="relative z-20 flex flex-1 flex-col px-[var(--gutter)] pt-sp5 pb-sp4">
         {phase === 'bridge' ? (
           <>
-            <ElementReveal index="01" title="Кому мы продаём" />
-
-            <Bridge blocks={LAB1_BRIDGE} delay={1.05} className="mt-sp5" />
+            <div className="flex-1" />
+            <AnimatePresence mode="wait">
+              {!punchReady ? (
+                <motion.div
+                  key={`card-${step}`}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8, transition: { duration: 0.15 } }}
+                  transition={{ duration: DUR.scene, ease: EASE_OUT }}
+                  className="mb-sp3"
+                >
+                  <Panel>
+                    <p
+                      className={
+                        step < 2
+                          ? 'display-m text-ink'
+                          : 'text-[16px] leading-relaxed text-ink-2'
+                      }
+                    >
+                      {BEFORE_VIDEO_1.cards[step]}
+                    </p>
+                  </Panel>
+                </motion.div>
+              ) : (
+                <motion.p
+                  key="punch"
+                  initial={{ opacity: 0, y: 14, filter: 'blur(8px)' }}
+                  animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                  transition={{ duration: DUR.scene, ease: EASE_OUT }}
+                  className="display-xl on-scene mb-sp3 whitespace-pre-line text-ink"
+                >
+                  {BEFORE_VIDEO_1.punch}
+                </motion.p>
+              )}
+            </AnimatePresence>
           </>
         ) : (
           <motion.div
@@ -57,12 +110,16 @@ export function Lab1Screen({ onNext }: { onNext: () => void }) {
             <h1 className="display-m on-scene max-w-[12ch] text-ink">Элемент первый: кому мы продаём</h1>
             <div className="mt-sp5">
               <VideoBlock
-                video={config.videos.v1}
+                video={video1}
                 protocolNo="01"
                 title="Кому мы продаём"
                 seekTo={seekTo}
                 eventPrefix="video1"
-                onProgress={(share) => mark('video_1_progress', share)}
+                onProgress={(share) => {
+                  mark('video_1_started', true)
+                  mark('video_1_progress', share)
+                  mark('video_1_seconds', share * video1.duration)
+                }}
                 onCompleted={() => mark('video_1_completed', true)}
               />
             </div>
@@ -72,15 +129,11 @@ export function Lab1Screen({ onNext }: { onNext: () => void }) {
 
       <BottomBar>
         {phase === 'bridge' ? (
-          <Button onClick={() => setPhase('video')}>Смотреть протокол 01</Button>
+          <Button disabled={!punchReady} onClick={() => setPhase('video')}>
+            {CTA.figureOut}
+          </Button>
         ) : (
-          <Button
-            disabled={!video_1_completed}
-            onClick={() => {
-              track('lab_entered', { after: 'video1' })
-              onNext()
-            }}
-          >
+          <Button disabled={!video_1_completed} onClick={onNext}>
             {video_1_completed ? 'Забрать награду' : 'Сначала протокол 01'}
           </Button>
         )}

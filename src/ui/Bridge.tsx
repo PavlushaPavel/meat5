@@ -1,5 +1,5 @@
 import { motion } from 'motion/react'
-import type { BridgeBlock } from '../content/script'
+import type { BridgeBlock } from '../content/copy'
 import { DUR, EASE_OUT } from '../lib/motion'
 import { cn } from '../lib/cn'
 
