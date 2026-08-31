@@ -14,9 +14,17 @@ import { config } from '../config'
 import { useVoice } from '../lib/useVoice'
 import { track, trackOnce } from '../lib/analytics'
 import { useProgress } from '../store/progress'
-import { DUR, EASE_OUT } from '../lib/motion'
+import { DUR, EASE_OUT, prefersReducedMotion } from '../lib/motion'
 import { asset } from '../lib/asset'
-import { useEffect } from 'react'
+import { haptic } from '../lib/telegram'
+import { useEffect, useState } from 'react'
+
+/** Между открытием кадра и приходом карточки сообщения — заметная, но не
+ * тянущая пауза: человек успевает увидеть пустой Город, прежде чем прилетит
+ * сообщение (правка владельца, задача 2). Требование ТЗ §8.1 «до play на
+ * экране нет ни одной другой строки» от этого не страдает: секунду держит
+ * только фотография кадра, без единого слова. */
+const ARRIVAL_DELAY_MS = 550
 
 /**
  * Экран 1. Входящее сообщение (STATE01, SPEC.md §4–§5, DESIGN.md §8.1).
@@ -54,6 +62,19 @@ export function MessageScreen({ onNext }: { onNext: () => void }) {
   const phase: 'idle' | 'voice' | 'done' = !voice.started ? 'idle' : voice.done ? 'done' : 'voice'
   const frame = FRAMES.indexOf(frameForLine(voice.index, voice.line?.district))
 
+  const [reduced] = useState(prefersReducedMotion)
+  // Карточка приходит не с первого кадра (правка владельца, задача 2): до
+  // этого момента экран пуст, только кадр города. Момент прихода получает
+  // тактильный отклик — вне Telegram `haptic` молча ничего не делает.
+  const [arrived, setArrived] = useState(false)
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setArrived(true)
+      haptic('medium')
+    }, ARRIVAL_DELAY_MS)
+    return () => clearTimeout(t)
+  }, [])
+
   useEffect(() => {
     track('intro_message_viewed')
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -84,7 +105,13 @@ export function MessageScreen({ onNext }: { onNext: () => void }) {
   return (
     <Screen bare>
       <CityFlight frame={frame} active={phase !== 'idle'} />
-      {phase !== 'idle' && <Character height="54vh" delay={0.1} />}
+      {/* Крупный рассказчик на переднем плане (правка владельца, задача 3):
+          высота поднята с 54vh, чтобы лицо читалось выше зоны, которую внизу
+          занимают субтитры/акцент и панель голосового — это самый надёжный
+          рычаг из тех, что нам разрешено трогать (см. также сужение полосы
+          акцента в CityAccent и Subtitles). На фазе idle персонажа нет вовсе:
+          карточка сообщения остаётся единственным, что тянет внимание. */}
+      {phase !== 'idle' && <Character height="64vh" delay={0.1} />}
 
       <div className="relative z-20 flex flex-1 flex-col px-[var(--gutter)] pt-sp5">
         {phase !== 'idle' && (
@@ -93,24 +120,29 @@ export function MessageScreen({ onNext }: { onNext: () => void }) {
 
         <div className="flex-1" />
 
-        {phase === 'idle' && (
+        {phase === 'idle' && arrived && (
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: DUR.scene, ease: EASE_OUT }}
+            initial={{ opacity: 0, y: reduced ? 0 : 46 }}
+            animate={{ opacity: 1, y: reduced ? 0 : [46, -6, 0] }}
+            transition={{ duration: reduced ? DUR.ui : DUR.scene, ease: EASE_OUT }}
             className="mb-sp4"
           >
-            <MessageCard />
+            <MessageCard onPlay={voice.toggle} pulse={!reduced} />
           </motion.div>
         )}
 
+        {/* Кадр: субтитры/акцент несут сцену (DESIGN.md §6.1). Разведены с
+            панелью управления заметным зазором (задача 4) — ниже стоит
+            служебный элемент, а не продолжение того же блока. */}
         {phase === 'voice' &&
           (voice.line?.accent ? (
-            <CityAccent text={voice.line.accent} className="mb-sp4" />
+            <CityAccent text={voice.line.accent} className="mb-sp6" />
           ) : (
-            <Subtitles line={voice.line} className="mb-sp4" />
+            <Subtitles line={voice.line} className="mb-sp6" />
           ))}
 
+        {/* Служебная панель: компактна и прижата к низу, ближе к golden CTA,
+            чем к сцене над ней — она не претендует на то же внимание. */}
         {phase === 'voice' && (
           <VoiceBar
             playing={voice.playing}
@@ -122,13 +154,20 @@ export function MessageScreen({ onNext }: { onNext: () => void }) {
             onCycleRate={voice.cycleRate}
             onToggleMute={voice.toggleMute}
             onReplay={voice.replay}
-            className="mb-sp4"
+            className="mb-sp2"
           />
         )}
       </div>
 
       <BottomBar>
-        {phase === 'idle' && <Button onClick={voice.toggle}>{CTA.listen}</Button>}
+        {/* Пока карточка не прилетела, кнопке нечего запускать — она гаснет
+            вместе с пустым кадром и появляется ровно в момент прихода
+            сообщения, а не раньше него. */}
+        {phase === 'idle' && (
+          <Button onClick={voice.toggle} disabled={!arrived}>
+            {CTA.listen}
+          </Button>
+        )}
         {phase === 'done' && <Button onClick={onNext}>{CTA.enter}</Button>}
       </BottomBar>
     </Screen>

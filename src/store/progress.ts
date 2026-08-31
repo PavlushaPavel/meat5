@@ -60,8 +60,16 @@ export interface ProgressState {
   video_3_seconds: number
   /** Таймкоды моментов, на которых человек ошибся в тесте (было: `missed`). */
   quiz_missed: string[]
-  /** Куда и на какую секунду вернуть человека по кнопке «пересмотреть момент». */
-  review: { step: StepId; at: number } | null
+  /**
+   * Моменты из quiz_missed, которые человек уже пересмотрел (вернулся назад
+   * после «Пересмотреть {moment}»/«Добрать базу»). Не в §32 — нужно только
+   * чтобы «Добрать базу» вела на следующий непросмотренный, а не всегда на
+   * первый. Считается пересмотренным в момент возврата (clearReview), а не
+   * в момент нажатия «пересмотреть»: досмотреть можно и не вернувшись.
+   */
+  quiz_reviewed: string[]
+  /** Куда, на какую секунду и какой момент вернуть человека по кнопке «пересмотреть момент». */
+  review: { step: StepId; at: number; moment: string } | null
   /**
    * Обход гейтинга (SPEC.md §43) из DebugPanel. Намеренно НЕ персистится:
    * это разовый прыжок для отладки в текущей вкладке, а не постоянное
@@ -71,7 +79,7 @@ export interface ProgressState {
   debugUnlocked: boolean
 
   go: (step: StepId) => void
-  sendToReview: (step: StepId, at: number) => void
+  sendToReview: (step: StepId, at: number, moment: string) => void
   clearReview: () => void
   mark: <K extends keyof ProgressState>(key: K, value: ProgressState[K]) => void
   /** Пишет и в quiz_missed (таймкод), и в quiz_wrong_topics (тема; без темы — тот же таймкод). */
@@ -109,6 +117,7 @@ function createInitial(): PersistedData {
     quiz_attempts: 0,
     quiz_wrong_topics: [],
     quiz_missed: [],
+    quiz_reviewed: [],
     quiz_completed: false,
     video_3_started: false,
     video_3_progress: 0,
@@ -155,8 +164,7 @@ interface LegacyStateV1 {
  * отдельных состояний) — вместо этого он пересчитывается через resumeStep
  * по уже восстановленным флагам, той же функцией, что решает обычный resume.
  */
-function migrate(persisted: unknown, version: number): PersistedData {
-  if (version >= 2) return persisted as PersistedData
+function migrateV1ToV2(persisted: unknown): PersistedData {
   const old = (persisted ?? {}) as LegacyStateV1
   const now = Date.now()
   const next: PersistedData = {
@@ -185,12 +193,28 @@ function migrate(persisted: unknown, version: number): PersistedData {
     tripwire_viewed: Boolean(old.offer_viewed),
     checkout_started: Boolean(old.checkout_started),
     purchased: Boolean(old.purchased),
-    review: (old.review as PersistedData['review']) ?? null,
+    // v1 не знал момента текста, только step/at — на пересчёт quiz_reviewed
+    // это не влияет (тот список у v1 всё равно пуст), а review почти
+    // наверняка уже очищен к моменту, когда кто-то доходит до этой миграции.
+    review: old.review ? { step: old.review.step as StepId, at: old.review.at, moment: '' } : null,
     created_at: now,
     updated_at: now,
   }
   next.step = resumeStep(next as ProgressState)
   return next
+}
+
+/**
+ * version 2 → 3: добавилось поле `quiz_reviewed` (моменты, которые человек
+ * уже пересмотрел после «Добрать базу»/«Пересмотреть {moment}»). У тех, кто
+ * уже открывал приложение на версии 2, список просто пуст — ни один из
+ * сохранённых quiz_missed ещё не помечен пересмотренным, «Добрать базу»
+ * начнёт вести с первого, как и должно быть.
+ */
+function migrate(persisted: unknown, version: number): PersistedData {
+  const v2 = version >= 2 ? (persisted as PersistedData) : migrateV1ToV2(persisted)
+  if (version >= 3) return v2
+  return { ...v2, quiz_reviewed: v2.quiz_reviewed ?? [] }
 }
 
 export const useProgress = create<ProgressState>()(
@@ -212,9 +236,25 @@ export const useProgress = create<ProgressState>()(
 
         go: (step) => setP({ step }),
 
-        sendToReview: (step, at) => setP({ review: { step, at }, step }),
+        sendToReview: (step, at, moment) => setP({ review: { step, at, moment }, step }),
 
-        clearReview: () => setP({ review: null }),
+        /**
+         * Момент считается пересмотренным ровно тогда, когда review закрывается
+         * (кнопка «Вернуться к допуску» на самом протоколе, см. Lab1Screen /
+         * Lab2Screen) — а не когда по нему только перешли. Так «Добрать базу»
+         * в следующий раз предложит следующий непросмотренный момент.
+         */
+        clearReview: () =>
+          setP((s) => {
+            if (!s.review) return { review: null }
+            const { moment } = s.review
+            return {
+              review: null,
+              quiz_reviewed: moment && !s.quiz_reviewed.includes(moment)
+                ? [...s.quiz_reviewed, moment]
+                : s.quiz_reviewed,
+            }
+          }),
 
         mark: (key, value) => setP({ [key]: value }) as void,
 
@@ -234,6 +274,7 @@ export const useProgress = create<ProgressState>()(
             quiz_attempts: s.quiz_attempts + 1,
             quiz_missed: [],
             quiz_wrong_topics: [],
+            quiz_reviewed: [],
           })),
 
         reset: () => setP({ ...createInitial(), debugUnlocked: false }),
@@ -241,7 +282,7 @@ export const useProgress = create<ProgressState>()(
     },
     {
       name: 'traffic-city-progress',
-      version: 2,
+      version: 3,
       migrate: migrate as (persisted: unknown, version: number) => ProgressState,
       // debugUnlocked нарочно не сохраняется — см. комментарий у поля.
       partialize: (s): ProgressState => {

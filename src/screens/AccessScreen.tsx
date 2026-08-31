@@ -60,6 +60,7 @@ export function AccessScreen({ onNext }: { onNext: () => void }) {
     quiz_completed,
     quiz_current_question,
     quiz_missed,
+    quiz_reviewed,
     loseLife,
     resetQuiz,
     mark,
@@ -130,6 +131,16 @@ export function AccessScreen({ onNext }: { onNext: () => void }) {
     mark('quiz_current_question', 0)
     setPhase('quiz')
   }
+
+  /** Отправляет пересмотреть конкретный момент — тот протокол, где он живёт. */
+  function goReview(moment: string) {
+    const q = QUIZ.find((item) => item.moment === moment)
+    sendToReview(reviewTarget(q?.protocol ?? 1).step, secondsOf(moment), moment)
+  }
+
+  // «Добрать базу» ведёт на первый ЕЩЁ не пересмотренный момент — иначе
+  // второй и третий отмеченные моменты человек не увидит никогда (SPEC.md §18).
+  const nextReviewMoment = quiz_missed.find((moment) => !quiz_reviewed.includes(moment))
 
   return (
     <Screen bare>
@@ -278,12 +289,15 @@ export function AccessScreen({ onNext }: { onNext: () => void }) {
                       ) : (
                         <>
                           <p className="text-[15px] leading-relaxed text-ink-2">{question.explain}</p>
-                          {reviewTarget(question.protocol).videoUrl && (
+                          {/*
+                            Кнопку показываем всегда, даже пока ссылки на видео нет.
+                            Иначе разбор ошибки обрывается на полуслове, а вернуться
+                            в допуск человеку всё равно есть чем — там своя кнопка.
+                          */}
+                          {(
                             <button
                               type="button"
-                              onClick={() =>
-                                sendToReview(reviewTarget(question.protocol).step, secondsOf(question.moment))
-                              }
+                              onClick={() => goReview(question.moment)}
                               className="label-mono mt-sp3 min-h-[44px] cursor-pointer rounded-chip border border-gold px-sp2 py-[8px] text-gold transition-transform duration-[var(--t-press)] ease-e-out active:scale-[0.97]"
                             >
                               {CTA.quizReview.replace('{moment}', question.moment)}
@@ -309,17 +323,20 @@ export function AccessScreen({ onNext }: { onNext: () => void }) {
               {quiz_missed.map((moment) => {
                 const q = QUIZ.find((item) => item.moment === moment)
                 if (!q) return null
-                const target = reviewTarget(q.protocol)
-                if (!target.videoUrl) return null
+                const reviewed = quiz_reviewed.includes(moment)
                 return (
                   <li key={moment}>
                     <button
                       type="button"
-                      onClick={() => sendToReview(target.step, secondsOf(moment))}
-                      className="flex w-full min-h-[44px] cursor-pointer flex-col gap-[2px] rounded-chip border border-line px-sp3 py-sp2 text-left"
+                      onClick={() => goReview(moment)}
+                      className={cn(
+                        'flex w-full min-h-[44px] cursor-pointer flex-col gap-[2px] rounded-chip border border-line px-sp3 py-sp2 text-left',
+                        reviewed && 'opacity-50',
+                      )}
                     >
                       <span className="label-mono text-gold">
                         протокол {q.protocol} — {moment}
+                        {reviewed && ' · пересмотрено'}
                       </span>
                       <span className="text-[14px] leading-snug text-ink-2">{firstSentence(q.explain)}</span>
                     </button>
@@ -354,21 +371,22 @@ export function AccessScreen({ onNext }: { onNext: () => void }) {
         )}
         {phase === 'failed' && (
           <div className="flex flex-col gap-sp2">
-            <Button
-              onClick={() => {
-                const target = quiz_missed[0]
-                if (!target) return
-                const q = QUIZ.find((item) => item.moment === target)
-                const step = reviewTarget(q?.protocol ?? 1).step
-                sendToReview(step, secondsOf(target))
-              }}
-              disabled={quiz_missed.length === 0}
-            >
-              {CTA.quizCatchUp}
-            </Button>
-            <Button variant="secondary" onClick={retry}>
-              {CTA.quizRetry}
-            </Button>
+            {/*
+              Пока остался хоть один непросмотренный момент, «Добрать базу» —
+              главное действие. Когда все моменты пересмотрены, главным
+              становится «Попробовать ещё раз» (SPEC.md §18) — вести «Добрать
+              базу» больше некуда.
+            */}
+            {nextReviewMoment ? (
+              <>
+                <Button onClick={() => goReview(nextReviewMoment)}>{CTA.quizCatchUp}</Button>
+                <Button variant="secondary" onClick={retry}>
+                  {CTA.quizRetry}
+                </Button>
+              </>
+            ) : (
+              <Button onClick={retry}>{CTA.quizRetry}</Button>
+            )}
           </div>
         )}
         {phase === 'passed' && <Button onClick={onNext}>{CTA.next}</Button>}

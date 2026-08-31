@@ -25,6 +25,12 @@ const WAVE = [
  * зона у каждой всё равно 44×44 (`h-11 w-11`) — меньше стал видимый вес, а
  * не цель; на 44px минимум тап-зоны шести элементов в одну строку на
  * телефоне (320px) всё ещё не помещаются, отсюда и остаётся вторая строка.
+ *
+ * Панель — служебный элемент, а не часть кадра (правка владельца, задача 4):
+ * субтитры и акцентная фраза несут сцену, эта полоса только даёт управление.
+ * Поэтому поверхность стала тише, чем раньше (более прозрачная подложка,
+ * тоньше рамка, меньше внутренних отступов) — панель не должна тянуть на себя
+ * внимание и вместе с субтитрами хоронить персонажа за собой.
  */
 export function VoiceBar({
   playing,
@@ -53,8 +59,8 @@ export function VoiceBar({
   return (
     <div
       className={cn(
-        'flex flex-col gap-sp1 rounded-panel border border-line/70 px-sp2 py-sp2',
-        'bg-[color-mix(in_oklab,var(--color-ground-deep)_80%,transparent)] backdrop-blur-[6px]',
+        'flex flex-col gap-sp1 rounded-panel border border-line/40 px-sp2 py-sp1',
+        'bg-[color-mix(in_oklab,var(--color-ground-deep)_60%,transparent)] backdrop-blur-[4px]',
         className,
       )}
     >

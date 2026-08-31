@@ -56,7 +56,7 @@ export function Character({
       style={pin ? { bottom: 'var(--tg-gap-bottom)' } : undefined}
     >
       <motion.img
-        src={asset(pose === 'calm' ? 'world/character-calm.webp' : 'world/character-hero.webp')}
+        src={asset(pose === 'calm' ? 'world/character-calm.webp' : 'world/character-point.webp')}
         alt=""
         aria-hidden
         initial={{ opacity: 0, y: 28, scale: 1.02 }}

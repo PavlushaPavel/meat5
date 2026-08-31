@@ -12,10 +12,19 @@ import { config } from '../config'
 import { useProgress } from '../store/progress'
 import { DUR, EASE_OUT, prefersReducedMotion } from '../lib/motion'
 import { asset } from '../lib/asset'
+import { cn } from '../lib/cn'
 
-/** Сколько кадр держит каждую из трёх карточек, мс — раскрытие идёт само,
- * тапать по нему не нужно (SPEC.md §7: маршрут не показывается заранее). */
-const CARD_HOLD = [1500, 1500, 2100]
+/**
+ * Сколько кадр держит каждую из трёх карточек, мс — раскрытие идёт само.
+ *
+ * Раньше здесь стояло [1500, 1500, 2100]: вся последовательность пролетала
+ * меньше чем за 5 секунд, и владелец продукта в живой версии её не заметил
+ * вовсе. Короткие карточки держатся не меньше 1.9–2.1с, третья — длиннее,
+ * потому что в ней целое предложение. Тапнуть по кадру и ускорить показ
+ * по-прежнему можно (см. `skip` ниже) — но по умолчанию человек успевает
+ * прочитать, а не пропускает мимо.
+ */
+const CARD_HOLD = [1900, 2100, 3300]
 
 /**
  * Экран 2. Первый эксперимент.
@@ -30,8 +39,12 @@ const CARD_HOLD = [1500, 1500, 2100]
  * появляется кнопка «Разобраться».
  */
 export function Lab1Screen({ onNext }: { onNext: () => void }) {
-  const { mark, video_1_completed, review, clearReview } = useProgress()
+  const { mark, video_1_completed, review, clearReview, go } = useProgress()
   const seekTo = review?.step === 'lab1' ? review.at : undefined
+  // Пока review указывает сюда, единственное действие экрана — вернуть
+  // человека в допуск (SPEC.md §17-18): он пришёл пересмотреть конкретный
+  // момент, а не идти по воронке заново.
+  const inReview = review?.step === 'lab1'
   const [phase, setPhase] = useState<'bridge' | 'video'>(video_1_completed ? 'video' : 'bridge')
   const [step, setStep] = useState(() => (prefersReducedMotion() ? BEFORE_VIDEO_1.cards.length : 0))
   const video1 = { url: config.video1Url, duration: config.videoDurations.v1, poster: config.videoPosters.v1 }
@@ -53,6 +66,16 @@ export function Lab1Screen({ onNext }: { onNext: () => void }) {
 
   const punchReady = step >= BEFORE_VIDEO_1.cards.length
 
+  /**
+   * Тап по кадру ускоряет показ карточек — человек не обязан ждать таймер,
+   * если уже прочитал (задача 3: «может ускорить показ тапом, но не обязан»).
+   * После punch тап ничего не пропускает: удар держится, пока не нажата кнопка.
+   */
+  const skip = () => {
+    if (punchReady) return
+    setStep((s) => s + 1)
+  }
+
   return (
     <Screen bare>
       {/* Без `still`: кадр дышит, как и остальные сцены воронки — иначе
@@ -64,7 +87,10 @@ export function Lab1Screen({ onNext }: { onNext: () => void }) {
 
       <div className="relative z-20 flex flex-1 flex-col px-[var(--gutter)] pt-sp5 pb-sp4">
         {phase === 'bridge' ? (
-          <>
+          <div
+            className={cn('flex flex-1 flex-col', !punchReady && 'cursor-pointer')}
+            onClick={skip}
+          >
             <div className="flex-1" />
             <AnimatePresence mode="wait">
               {!punchReady ? (
@@ -72,7 +98,7 @@ export function Lab1Screen({ onNext }: { onNext: () => void }) {
                   key={`card-${step}`}
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8, transition: { duration: 0.15 } }}
+                  exit={{ opacity: 0, y: -14, filter: 'blur(4px)', transition: { duration: DUR.ui, ease: EASE_OUT } }}
                   transition={{ duration: DUR.scene, ease: EASE_OUT }}
                   className="mb-sp3"
                 >
@@ -100,7 +126,7 @@ export function Lab1Screen({ onNext }: { onNext: () => void }) {
                 </motion.p>
               )}
             </AnimatePresence>
-          </>
+          </div>
         ) : (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -131,6 +157,15 @@ export function Lab1Screen({ onNext }: { onNext: () => void }) {
         {phase === 'bridge' ? (
           <Button disabled={!punchReady} onClick={() => setPhase('video')}>
             {CTA.figureOut}
+          </Button>
+        ) : inReview ? (
+          <Button
+            onClick={() => {
+              clearReview()
+              go('access')
+            }}
+          >
+            {CTA.backToAccess}
           </Button>
         ) : (
           <Button disabled={!video_1_completed} onClick={onNext}>

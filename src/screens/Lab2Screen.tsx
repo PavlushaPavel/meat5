@@ -28,8 +28,12 @@ import { asset } from '../lib/asset'
  * Видео 2. Фаза видео не тронута.
  */
 export function Lab2Screen({ onNext }: { onNext: () => void }) {
-  const { mark, video_2_completed, review, clearReview } = useProgress()
+  const { mark, video_2_completed, review, clearReview, go } = useProgress()
   const seekTo = review?.step === 'lab2' ? review.at : undefined
+  // Пока review указывает сюда, единственное действие экрана — вернуть
+  // человека в допуск (SPEC.md §17-18): он пришёл пересмотреть конкретный
+  // момент, а не идти по воронке заново.
+  const inReview = review?.step === 'lab2'
   const [phase, setPhase] = useState<'bridge' | 'video'>(video_2_completed ? 'video' : 'bridge')
   const video2 = { url: config.video2Url, duration: config.videoDurations.v2, poster: config.videoPosters.v2 }
 
@@ -119,7 +123,17 @@ export function Lab2Screen({ onNext }: { onNext: () => void }) {
 
       <BottomBar>
         {phase === 'bridge' && <Button onClick={() => setPhase('video')}>{CTA.buildOffer}</Button>}
-        {phase === 'video' && (
+        {phase === 'video' && inReview && (
+          <Button
+            onClick={() => {
+              clearReview()
+              go('access')
+            }}
+          >
+            {CTA.backToAccess}
+          </Button>
+        )}
+        {phase === 'video' && !inReview && (
           <Button disabled={!video_2_completed} onClick={onNext}>
             {video_2_completed ? 'Забрать награду' : 'Сначала протокол 02'}
           </Button>

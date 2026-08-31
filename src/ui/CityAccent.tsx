@@ -8,6 +8,13 @@ import { cn } from '../lib/cn'
  * Не строка субтитра — крупная типографика поверх кадра, ровно там же, где
  * обычно стоят субтитры. Акцент и обычный субтитр никогда не показываются
  * одновременно: экран решает, что показать, до рендера этого компонента.
+ *
+ * Ширина меры сознательно расширена (было 9ch): на самых длинных фразах
+ * сценария («Нужно лучше отвечать за результат») узкая колонка рвала текст
+ * на 4 строки крупного дисплейного кегля, и блок вырастал настолько, что
+ * перекрывал лицо ведущего (правка владельца, задача 3). 20ch держит те же
+ * фразы в 2 строках — драматизм крупной типографики остаётся, а высота блока
+ * не съедает кадр.
  */
 export function CityAccent({ text, className }: { text?: string; className?: string }) {
   return (
@@ -28,7 +35,7 @@ export function CityAccent({ text, className }: { text?: string; className?: str
             animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
             exit={{ opacity: 0, y: -10, filter: 'blur(6px)', transition: { duration: 0.15 } }}
             transition={{ duration: DUR.scene, ease: EASE_OUT }}
-            className="display-xl on-scene relative max-w-[9ch] text-balance text-ink"
+            className="display-xl on-scene relative max-w-[20ch] text-balance text-ink"
           >
             {text}
           </motion.p>

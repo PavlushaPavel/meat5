@@ -74,6 +74,10 @@ export function OfferScreen({ onNext }: { onNext: () => void }) {
       openExternal(config.checkoutUrl)
       return
     }
+    // Заглушка приёмки, пока чекаута нет. Отметить покупку обязательно:
+    // без неё canEnter('purchased') не пустит на экран доступа и вернёт
+    // человека назад в маршрут — проход воронки на этом и спотыкался.
+    mark('purchased', true)
     onNext()
   }
 
