@@ -10,6 +10,13 @@ import { chromium } from 'playwright'
 import { mkdir } from 'node:fs/promises'
 
 const BASE = process.env.BASE ?? 'http://localhost:4173/meat5/'
+/**
+ * Версия схемы прогресса. ОБЯЗАНА совпадать с persist в store/progress.ts:
+ * при несовпадении сохранённое состояние отбрасывается миграцией, и проверка
+ * молча смотрит не на тот экран, а на первый.
+ */
+const PROGRESS_VERSION = 4
+
 const OUT = '.review'
 /** iPhone 14: самый ходовой размер, на котором это будут открывать. */
 const VIEWPORT = { width: 390, height: 844 }
@@ -33,7 +40,7 @@ const done = {
  * Действие — список селекторов: часть состояний состоит из нескольких фаз подряд,
  * и до нужного кадра надо дойти теми же кнопками, что нажимает человек.
  */
-const LISTEN = ['button:has-text("Прослушать сообщение")']
+const LISTEN = ['[data-bottom-bar] button:not([disabled])']
 
 const STATES = [
   ['1-message', { step: 'message' }],
@@ -46,7 +53,7 @@ const STATES = [
   ['5b-lab2-video', { step: 'lab2', ...done }],
   ['6-reward2', { step: 'reward2', ...done, assistant_2_opened: false }],
   ['7-access-barrier', { step: 'access', ...done, quiz_completed: false, quiz_started: false }],
-  ['7b-access-door', { step: 'access', ...done, quiz_completed: false, quiz_started: false }, ['button:has-text("Дальше")', 'button:has-text("Дальше")']],
+  ['7b-access-door', { step: 'access', ...done, quiz_completed: false, quiz_started: false }, ['[data-bottom-bar] button:not([disabled])', '[data-bottom-bar] button:not([disabled])']],
   ['7c-quiz', { step: 'access', ...done, quiz_completed: false, quiz_started: true }],
   ['8-lab3-bridge', { step: 'lab3', ...done, video_3_completed: false }],
   ['8b-lab3-video', { step: 'lab3', ...done }],
@@ -63,20 +70,27 @@ const problems = []
 for (const [name, state, action] of STATES) {
   const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: 2 })
   await context.addInitScript((s) => {
-    localStorage.setItem('traffic-city-progress', JSON.stringify({ state: s, version: 2 }))
+    localStorage.setItem('traffic-city-progress', JSON.stringify(s))
   }, {
-    quiz_lives: 5,
-    quiz_attempts: 0,
-    quiz_current_question: 0,
-    quiz_wrong_topics: [],
-    quiz_missed: [],
-    review: null,
-    created_at: Date.now(),
-    updated_at: Date.now(),
-    video_1_progress: 1,
-    video_2_progress: 1,
-    video_3_progress: 1,
-    ...state,
+    // Версия передаётся АРГУМЕНТОМ, а не берётся из внешней константы: функция
+    // выполняется внутри страницы, где никаких внешних переменных нет. Сослаться
+    // на константу — значит уронить подстановку молча и снимать первый экран
+    // вместо нужного состояния. Уже наступали.
+    version: PROGRESS_VERSION,
+    state: {
+      quiz_lives: 5,
+      quiz_attempts: 0,
+      quiz_current_question: 0,
+      quiz_wrong_topics: [],
+      quiz_missed: [],
+      review: null,
+      created_at: Date.now(),
+      updated_at: Date.now(),
+      video_1_progress: 1,
+      video_2_progress: 1,
+      video_3_progress: 1,
+      ...state,
+    },
   })
   const page = await context.newPage()
   await page.goto(BASE, { waitUntil: 'networkidle' })
@@ -87,7 +101,19 @@ for (const [name, state, action] of STATES) {
   for (const selector of action ?? []) {
     // Фазы раскрываются анимацией: кнопка появляется не сразу и сначала выключена.
     const button = page.locator(selector).first()
-    await button.waitFor({ state: 'visible', timeout: 15000 })
+    try {
+      await button.waitFor({ state: 'visible', timeout: 30000 })
+    } catch {
+      const видно = await page.evaluate(() => ({
+        текст: document.body.innerText.replace(/\n+/g, ' | ').slice(0, 160),
+        кнопки: [...document.querySelectorAll('[data-bottom-bar] button')].map(
+          (b) => `${b.textContent.trim()}${b.disabled ? '(off)' : ''}`,
+        ),
+      }))
+      throw new Error(
+        `${name}: не дождались «${selector}». На экране: ${видно.текст} || кнопки: ${видно.кнопки.join(', ') || 'нет'}`,
+      )
+    }
     await button.click({ timeout: 15000 })
     await page.waitForTimeout(2200)
   }

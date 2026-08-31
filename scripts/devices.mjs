@@ -11,6 +11,13 @@ import { chromium } from 'playwright'
 import { mkdir } from 'node:fs/promises'
 
 const BASE = process.env.BASE ?? 'http://localhost:4173/meat5/'
+/**
+ * Версия схемы прогресса. ОБЯЗАНА совпадать с persist в store/progress.ts:
+ * при несовпадении сохранённое состояние отбрасывается миграцией, и проверка
+ * молча смотрит не на тот экран, а на первый.
+ */
+const PROGRESS_VERSION = 4
+
 const OUT = '.review/devices'
 
 /** Ходовые размеры: маленький Android, iPhone SE/13 mini, iPhone 14, Pro Max. */
@@ -110,17 +117,21 @@ for (const [label, w, h] of SIZES) {
   for (const [name, state] of STATES) {
     const ctx = await browser.newContext({ viewport: { width: w, height: h } })
     await ctx.addInitScript(
-      (s) => localStorage.setItem('traffic-city-progress', JSON.stringify({ state: s, version: 2 })),
+      (s) => localStorage.setItem('traffic-city-progress', JSON.stringify(s)),
       {
-        quiz_lives: 5,
-        quiz_attempts: 0,
-        quiz_current_question: 0,
-        quiz_wrong_topics: [],
-        quiz_missed: [],
-        review: null,
-        created_at: Date.now(),
-        updated_at: Date.now(),
-        ...state,
+        // Версия — аргументом: внутри страницы внешних констант не существует.
+        version: PROGRESS_VERSION,
+        state: {
+          quiz_lives: 5,
+          quiz_attempts: 0,
+          quiz_current_question: 0,
+          quiz_wrong_topics: [],
+          quiz_missed: [],
+          review: null,
+          created_at: Date.now(),
+          updated_at: Date.now(),
+          ...state,
+        },
       },
     )
     const page = await ctx.newPage()
@@ -147,7 +158,7 @@ for (const [name, state] of STATES) {
   await ctx.route('**/telegram-web-app.js', (route) => route.abort())
   await ctx.addInitScript(TELEGRAM_STUB(640, 56, 34))
   await ctx.addInitScript(
-    (s) => localStorage.setItem('traffic-city-progress', JSON.stringify({ state: s, version: 2 })),
+    (s) => localStorage.setItem('traffic-city-progress', JSON.stringify(s)),
     {
       quiz_lives: 5,
       quiz_attempts: 0,

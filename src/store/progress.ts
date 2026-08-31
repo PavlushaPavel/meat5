@@ -11,7 +11,7 @@
  */
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { resumeStep, type StepId } from '../router/flow'
+import type { StepId } from '../router/flow'
 
 export const QUIZ_LIVES = 5
 export const QUIZ_LENGTH = 12
@@ -135,86 +135,24 @@ function createInitial(): PersistedData {
 }
 
 /** Форма стора версии 1 (до переименования полей под §32). */
-interface LegacyStateV1 {
-  step?: string
-  intro_completed?: boolean
-  video_1_progress?: number
-  video_1_completed?: boolean
-  assistant_1_opened?: boolean
-  video_2_progress?: number
-  video_2_completed?: boolean
-  assistant_2_opened?: boolean
-  quiz_attempts?: number
-  quiz_lives?: number
-  quiz_completed?: boolean
-  video_3_progress?: number
-  video_3_completed?: boolean
-  result_site_opened?: boolean
-  offer_viewed?: boolean
-  checkout_started?: boolean
-  purchased?: boolean
-  missed?: string[]
-  review?: { step: string; at: number } | null
-}
-
 /**
- * version 1 → 2: старые ключи `missed`, `offer_viewed`, `timestamps` переносятся
- * в новую схему без потери прогресса у тех, кто уже открывал приложение.
- * `step` не мапится таблицей 1:1 (в v1 не было `message` и `reward2` как
- * отдельных состояний) — вместо этого он пересчитывается через resumeStep
- * по уже восстановленным флагам, той же функцией, что решает обычный resume.
+ * version → 4: СТАРЫЙ ПРОГРЕСС ОТБРАСЫВАЕТСЯ ЦЕЛИКОМ. Это осознанное решение.
+ *
+ * Маршрут поменял форму: девять состояний стали одиннадцатью, появились
+ * мосты, карточки перед протоколом и отдельные награды. Перенесённые флаги
+ * «видео просмотрено, тест сдан» формально верны, но приводят к худшему из
+ * возможных исходов: восстановление честно уводит человека на девятое
+ * состояние, и всё новое — мосты, вопросы, карточки — он не видит ВООБЩЕ.
+ * Именно на это и наткнулся владелец, открыв обновлённую версию поверх
+ * прогресса от прошлых сборок.
+ *
+ * Воронка ещё не запущена, живых прохождений нет, терять нечего. Поэтому
+ * честнее начать маршрут заново, чем показать половину продукта и молчать.
+ * Когда появится бэкенд и настоящие пользователи, миграции снова станут
+ * обязательными — тогда и вернём перенос полей.
  */
-function migrateV1ToV2(persisted: unknown): PersistedData {
-  const old = (persisted ?? {}) as LegacyStateV1
-  const now = Date.now()
-  const next: PersistedData = {
-    ...createInitial(),
-    user_id: null,
-    intro_started: Boolean(old.intro_completed),
-    intro_completed: Boolean(old.intro_completed),
-    city_completed: Boolean(old.intro_completed),
-    video_1_started: Boolean(old.video_1_progress) || Boolean(old.video_1_completed),
-    video_1_progress: old.video_1_progress ?? 0,
-    video_1_completed: Boolean(old.video_1_completed),
-    assistant_1_opened: Boolean(old.assistant_1_opened),
-    video_2_started: Boolean(old.video_2_progress) || Boolean(old.video_2_completed),
-    video_2_progress: old.video_2_progress ?? 0,
-    video_2_completed: Boolean(old.video_2_completed),
-    assistant_2_opened: Boolean(old.assistant_2_opened),
-    quiz_started: Boolean(old.quiz_attempts) || Boolean(old.quiz_completed),
-    quiz_lives: old.quiz_lives ?? QUIZ_LIVES,
-    quiz_attempts: old.quiz_attempts ?? 0,
-    quiz_missed: old.missed ?? [],
-    quiz_completed: Boolean(old.quiz_completed),
-    video_3_started: Boolean(old.video_3_progress) || Boolean(old.video_3_completed),
-    video_3_progress: old.video_3_progress ?? 0,
-    video_3_completed: Boolean(old.video_3_completed),
-    result_site_opened: Boolean(old.result_site_opened),
-    tripwire_viewed: Boolean(old.offer_viewed),
-    checkout_started: Boolean(old.checkout_started),
-    purchased: Boolean(old.purchased),
-    // v1 не знал момента текста, только step/at — на пересчёт quiz_reviewed
-    // это не влияет (тот список у v1 всё равно пуст), а review почти
-    // наверняка уже очищен к моменту, когда кто-то доходит до этой миграции.
-    review: old.review ? { step: old.review.step as StepId, at: old.review.at, moment: '' } : null,
-    created_at: now,
-    updated_at: now,
-  }
-  next.step = resumeStep(next as ProgressState)
-  return next
-}
-
-/**
- * version 2 → 3: добавилось поле `quiz_reviewed` (моменты, которые человек
- * уже пересмотрел после «Добрать базу»/«Пересмотреть {moment}»). У тех, кто
- * уже открывал приложение на версии 2, список просто пуст — ни один из
- * сохранённых quiz_missed ещё не помечен пересмотренным, «Добрать базу»
- * начнёт вести с первого, как и должно быть.
- */
-function migrate(persisted: unknown, version: number): PersistedData {
-  const v2 = version >= 2 ? (persisted as PersistedData) : migrateV1ToV2(persisted)
-  if (version >= 3) return v2
-  return { ...v2, quiz_reviewed: v2.quiz_reviewed ?? [] }
+function migrate(_persisted: unknown, _version: number): PersistedData {
+  return createInitial()
 }
 
 export const useProgress = create<ProgressState>()(
@@ -282,7 +220,7 @@ export const useProgress = create<ProgressState>()(
     },
     {
       name: 'traffic-city-progress',
-      version: 3,
+      version: 4,
       migrate: migrate as (persisted: unknown, version: number) => ProgressState,
       // debugUnlocked нарочно не сохраняется — см. комментарий у поля.
       partialize: (s): ProgressState => {

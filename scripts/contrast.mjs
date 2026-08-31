@@ -14,6 +14,13 @@ import { mkdir } from 'node:fs/promises'
 import sharp from 'sharp'
 
 const BASE = process.env.BASE ?? 'http://localhost:4173/meat5/'
+/**
+ * Версия схемы прогресса. ОБЯЗАНА совпадать с persist в store/progress.ts:
+ * при несовпадении сохранённое состояние отбрасывается миграцией, и проверка
+ * молча смотрит не на тот экран, а на первый.
+ */
+const PROGRESS_VERSION = 4
+
 const OUT = '.review'
 const VIEWPORT = { width: 390, height: 844 }
 
@@ -77,17 +84,21 @@ for (const name of names) {
   const [state, action] = entry
   const context = await browser.newContext({ viewport: VIEWPORT, deviceScaleFactor: 1 })
   await context.addInitScript(
-    (s) => localStorage.setItem('traffic-city-progress', JSON.stringify({ state: s, version: 2 })),
+    (s) => localStorage.setItem('traffic-city-progress', JSON.stringify(s)),
     {
-      quiz_lives: 5,
-      quiz_attempts: 0,
-      quiz_current_question: 0,
-      quiz_wrong_topics: [],
-      quiz_missed: [],
-      review: null,
-      created_at: Date.now(),
-      updated_at: Date.now(),
-      ...state,
+      // Версия — аргументом: внутри страницы внешних констант не существует.
+      version: PROGRESS_VERSION,
+      state: {
+        quiz_lives: 5,
+        quiz_attempts: 0,
+        quiz_current_question: 0,
+        quiz_wrong_topics: [],
+        quiz_missed: [],
+        review: null,
+        created_at: Date.now(),
+        updated_at: Date.now(),
+        ...state,
+      },
     },
   )
   const page = await context.newPage()

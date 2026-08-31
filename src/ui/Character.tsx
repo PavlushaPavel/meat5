@@ -18,6 +18,7 @@ export function Character({
   height = '62vh',
   delay = 0,
   pose = 'point',
+  bottom,
   bleed = true,
   pin = false,
 }: {
@@ -27,6 +28,14 @@ export function Character({
   delay?: number
   /** point — указывает и говорит; calm — с ноутбуком, когда отдаёт инструмент. */
   pose?: 'point' | 'calm'
+  /**
+   * Насколько поднять фигуру над низом кадра (например '38%').
+   *
+   * По умолчанию фигура стоит на нижнем крае экрана, и всё, что лежит внизу —
+   * субтитры, панель голосового, кнопка — закрывает ей торс: на экране остаётся
+   * голова с плечом. Смещение позволяет поставить её ЦЕЛИКОМ над этим слоем.
+   */
+  bottom?: string
   /**
    * bleed — фигура уходит за боковой край, как часть сцены. Выключается там,
    * где ведущий сам является содержанием кадра (экран продажи): там он должен
@@ -68,7 +77,18 @@ export function Character({
           side === 'right' ? (bleed ? '-right-[8%]' : 'right-0') : bleed ? '-left-[8%]' : 'left-0',
           className,
         )}
-        style={{ height }}
+        style={{
+          height,
+          // Поднятая фигура заканчивается прямой линией посреди кадра —
+          // это читается как обрезанная картинка. Растворяем низ в сцене.
+          ...(bottom
+            ? {
+                bottom,
+                maskImage: 'linear-gradient(to bottom, #000 74%, transparent 100%)',
+                WebkitMaskImage: 'linear-gradient(to bottom, #000 74%, transparent 100%)',
+              }
+            : null),
+        }}
       />
     </div>
   )

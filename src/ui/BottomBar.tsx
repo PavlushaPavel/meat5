@@ -47,7 +47,15 @@ export function BottomBar({ children }: { children: ReactNode }) {
         }}
       />
       <motion.div
-        animate={{ opacity: allDisabled ? 0 : 1, y: allDisabled ? 10 : 0 }}
+        // visibility, а не только opacity: полностью прозрачная панель остаётся
+        // кликабельной и попадает в фокус с клавиатуры. Прячем ПОСЛЕ анимации
+        // (transitionEnd), показываем сразу — иначе исчезновение будет резким.
+        animate={
+          allDisabled
+            ? { opacity: 0, y: 10, transitionEnd: { visibility: 'hidden' } }
+            : { opacity: 1, y: 0, visibility: 'visible' }
+        }
+        initial={false}
         transition={reduced ? { duration: 0 } : { duration: 0.2, ease: EASE_OUT }}
       >
         {children}
