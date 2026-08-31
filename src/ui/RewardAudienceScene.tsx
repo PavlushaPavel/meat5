@@ -16,8 +16,8 @@ import { cn } from '../lib/cn'
  */
 const CLUSTERS = [
   { cx: 54, cy: 40, color: 'var(--acid)' },
-  { cx: 150, cy: 40, color: 'var(--gold)' },
-  { cx: 246, cy: 40, color: 'var(--ink-2)' },
+  { cx: 150, cy: 40, color: 'var(--color-gold)' },
+  { cx: 246, cy: 40, color: 'var(--color-ink-2)' },
 ] as const
 
 const DOTS_PER_CLUSTER = 6

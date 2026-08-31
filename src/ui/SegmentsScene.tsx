@@ -123,7 +123,7 @@ export function SegmentsScene({
       <svg viewBox={`0 0 ${VB_W} ${VB_H}`} className="absolute inset-0 h-full w-full" fill="none">
         <GlowLine
           d={`M${TOP.x},${TOP.y} L${TRUNK_END.x},${TRUNK_END.y}`}
-          color="var(--gold)"
+          color="var(--color-gold)"
           width={3}
           reveal={t(SEGMENTS_BEATS.intro)}
           reduced={reduced}
@@ -136,7 +136,7 @@ export function SegmentsScene({
           <GlowLine
             key={`d${i}`}
             d={`M${TRUNK_END.x},${TRUNK_END.y} Q150,${CTRL_Y_DIVERGE} ${x},${SEG_Y}`}
-            color="var(--gold-soft)"
+            color="var(--color-gold-soft)"
             width={2.4}
             reveal={t(SEGMENTS_BEATS.intro + 0.25 + i * 0.08)}
             reduced={reduced}
@@ -151,7 +151,7 @@ export function SegmentsScene({
               cx={x}
               cy={SEG_Y}
               r={13}
-              fill="var(--gold)"
+              fill="var(--color-gold)"
               initial={{ opacity: 0 }}
               animate={{ opacity: 0.16 }}
               transition={t(SEGMENTS_BEATS.diverge + i * 0.06, 0.3)}
@@ -160,7 +160,7 @@ export function SegmentsScene({
               cx={x}
               cy={SEG_Y}
               r={6.5}
-              fill="var(--gold)"
+              fill="var(--color-gold)"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={t(SEGMENTS_BEATS.diverge + i * 0.06, 0.3)}
@@ -171,7 +171,7 @@ export function SegmentsScene({
                 cy={SEG_Y}
                 r={6.5}
                 fill="none"
-                stroke="var(--gold)"
+                stroke="var(--color-gold)"
                 strokeWidth={1.4}
                 initial={{ opacity: 0 }}
                 animate={{ r: [6.5, 16], opacity: [0.5, 0] }}
@@ -239,7 +239,7 @@ export function SegmentsScene({
 
         <GlowLine
           d={`M${COLLAPSE.x},${COLLAPSE.y} L${BOTTOM.x},${BOTTOM.y}`}
-          color="var(--gold)"
+          color="var(--color-gold)"
           width={3}
           reveal={t(SEGMENTS_BEATS.merge)}
           reduced={reduced}
@@ -263,7 +263,7 @@ export function SegmentsScene({
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             transition={t(SEGMENTS_BEATS.diverge + i * 0.06, 0.3)}
-            className="label-mono inline-block rounded-chip border border-[color-mix(in_oklab,var(--gold)_35%,transparent)] bg-[color-mix(in_oklab,var(--color-ground-deep)_82%,transparent)] px-sp2 py-[3px] whitespace-nowrap text-ink"
+            className="label-mono inline-block rounded-chip border border-[color-mix(in_oklab,var(--color-gold)_35%,transparent)] bg-[color-mix(in_oklab,var(--color-ground-deep)_82%,transparent)] px-sp2 py-[3px] whitespace-nowrap text-ink"
           >
             {label}
           </motion.span>
