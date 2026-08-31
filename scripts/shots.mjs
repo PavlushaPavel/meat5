@@ -59,6 +59,11 @@ const STATES = [
   ['8b-lab3-video', { step: 'lab3', ...done }],
   ['9-bundle-assemble', { step: 'bundle', ...done, result_site_opened: false }],
   ['9b-bundle-payoff', { step: 'bundle', ...done }],
+  // Слои и переход к офферу — отдельные фазы того же состояния. Раньше их не
+  // снимал никто: на 9b видно только «после сайта», а слои успели месяц простоять
+  // слипшимися. Фаза без снимка — фаза без проверки.
+  ['9c-bundle-meta', { step: 'bundle', ...done }, ['[data-bottom-bar] button:not([disabled])']],
+  ['9d-bundle-to-offer', { step: 'bundle', ...done, meta_reveal_completed: true }],
   ['10-offer', { step: 'offer', ...done }],
   ['11-purchased', { step: 'purchased', ...done, purchased: true }],
 ]

@@ -4,13 +4,29 @@ import { DUR, EASE_OUT, prefersReducedMotion } from '../lib/motion'
 import { cn } from '../lib/cn'
 
 /**
- * Meta reveal (SPEC.md §24): само приложение расслаивается на карточки-слои,
- * разъезжающиеся в глубину, и только потом приходит текст — реплика заказчика
- * работает лишь после того, как человек это УВИДЕЛ, а не прочитал списком.
+ * Meta reveal (SPEC.md §24): само приложение расслаивается на слои — и только
+ * потом приходит текст. Реплика заказчика работает лишь после того, как человек
+ * это УВИДЕЛ, а не прочитал списком.
  *
- * `layers` — шесть подписей (Структура/Тексты/Визуалы/Дизайн/Сценарий/
- * Интерактив), `lines` — текст META_REVEAL.lines, приходящий следом.
+ * Раскладка. Было: шесть одинаковых плашек в одной точке со сдвигом 32px при
+ * ширине 122px — они перекрывали друг друга на три четверти, подписи ложились
+ * одна на другую, и вместо слоёв получалась каша. Теперь плашки разъезжаются
+ * ВЕРТИКАЛЬНО с шагом больше собственной высоты: ни одна подпись не закрыта,
+ * а глубина держится сносом вправо, наклоном и убыванием масштаба.
+ *
+ * Движение несёт сам аргумент: сначала все шесть лежат ОДНОЙ стопкой (это одно
+ * приложение), потом расходятся по одному (оно собрано из слоёв). Поэтому
+ * позиция анимируется от нуля, а не появляется готовой.
+ *
+ * Конечное положение задано в animate, а не только в анимации: при
+ * prefers-reduced-motion плашки обязаны стоять уже разъехавшимися. Раньше в этой
+ * ветке они оставались в одной точке — видна была только последняя.
  */
+
+const STEP_Y = 34
+const STEP_X = 9
+const PLATE_H = 46
+
 export function MetaLayers({
   layers,
   lines,
@@ -21,48 +37,64 @@ export function MetaLayers({
   className?: string
 }) {
   const [reduced] = useState(prefersReducedMotion)
-  const stagger = 0.12
-  const linesStart = reduced ? 0.1 : layers.length * stagger + 0.5
+  const stagger = 0.09
+  const spreadFrom = 0.4
+  const linesStart = reduced ? 0.1 : spreadFrom + (layers.length - 1) * stagger + DUR.scene + 0.2
+  const mid = (layers.length - 1) / 2
+  const height = (layers.length - 1) * STEP_Y + PLATE_H
 
   return (
     <div className={cn('relative', className)}>
-      <div
-        className="relative h-[176px] w-full"
-        style={{ perspective: reduced ? undefined : 1000 }}
-      >
+      <div className="relative w-full" style={{ height }}>
         {layers.map((layer, i) => {
-          const mid = (layers.length - 1) / 2
           const offset = i - mid
           return (
             <motion.div
               key={layer}
-              initial={reduced ? false : { opacity: 0 }}
-              animate={
+              initial={reduced ? false : { opacity: 0, x: 0, y: 0, rotate: 0, scale: 1 }}
+              animate={{
+                opacity: 1,
+                x: offset * STEP_X,
+                y: offset * STEP_Y,
+                rotate: offset * 0.9,
+                // Дальний слой мельче ближнего — это и есть глубина.
+                scale: 1 - i * 0.018,
+              }}
+              transition={
                 reduced
-                  ? { opacity: 1 }
+                  ? { duration: 0 }
                   : {
-                      opacity: 1,
-                      x: offset * 32,
-                      y: Math.abs(offset) * 8,
-                      z: -i * 30,
-                      rotateY: offset * -3,
-                      scale: 1 - i * 0.04,
+                      // Появляются все разом одной стопкой, разъезжаются по очереди.
+                      opacity: { duration: DUR.ui, ease: EASE_OUT },
+                      default: {
+                        duration: DUR.scene,
+                        ease: EASE_OUT,
+                        delay: spreadFrom + i * stagger,
+                      },
                     }
               }
-              transition={{ duration: DUR.scene, ease: EASE_OUT, delay: i * stagger }}
               className={cn(
-                'label-mono absolute grid h-[84px] w-[122px] place-items-center rounded-panel border px-sp2',
-                'border-line bg-[color-mix(in_oklab,var(--color-ground-deep)_82%,transparent)] text-center text-ink backdrop-blur-[2px]',
+                'absolute flex items-center gap-sp2 rounded-panel border border-line pr-sp3',
+                'bg-[color-mix(in_oklab,var(--color-panel)_92%,transparent)] backdrop-blur-[2px]',
+                'shadow-[0_10px_28px_-14px_rgba(2,6,14,0.95)]',
               )}
               style={{
                 top: '50%',
                 left: '50%',
-                marginTop: -42,
-                marginLeft: -61,
-                transformStyle: reduced ? undefined : 'preserve-3d',
+                width: 206,
+                height: PLATE_H,
+                marginTop: -PLATE_H / 2,
+                marginLeft: -103,
+                // Верхняя плашка ближе к зрителю — её тень ложится на нижние.
+                zIndex: layers.length - i,
               }}
             >
-              {layer}
+              {/* Торец слоя: плашка — материал, а не пустой прямоугольник. */}
+              <span
+                className="h-full w-[6px] shrink-0 rounded-l-panel"
+                style={{ background: 'var(--color-gold)', opacity: 1 - i * 0.13 }}
+              />
+              <span className="label-mono text-ink">{layer}</span>
             </motion.div>
           )
         })}

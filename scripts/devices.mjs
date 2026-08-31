@@ -44,6 +44,9 @@ const STATES = [
   ['access', { step: 'access', ...done, quiz_completed: false, quiz_started: false }],
   ['lab3', { step: 'lab3', ...done }],
   ['bundle', { step: 'bundle', ...done, result_site_opened: false }],
+  // Слои и переход к офферу — фазы того же состояния, до них надо дойти кнопкой.
+  ['bundle-meta', { step: 'bundle', ...done }, ['button:has-text("Дальше")']],
+  ['bundle-to-offer', { step: 'bundle', ...done, meta_reveal_completed: true }],
   ['offer', { step: 'offer', ...done }],
   ['purchased', { step: 'purchased', ...done, purchased: true }],
 ]
@@ -114,7 +117,7 @@ let problems = 0
 console.log('РАЗМЕРЫ ЭКРАНОВ')
 for (const [label, w, h] of SIZES) {
   const found = []
-  for (const [name, state] of STATES) {
+  for (const [name, state, action] of STATES) {
     const ctx = await browser.newContext({ viewport: { width: w, height: h } })
     await ctx.addInitScript(
       (s) => localStorage.setItem('traffic-city-progress', JSON.stringify(s)),
@@ -137,6 +140,10 @@ for (const [label, w, h] of SIZES) {
     const page = await ctx.newPage()
     await page.goto(BASE, { waitUntil: 'networkidle' })
     await page.waitForTimeout(1200)
+    for (const selector of action ?? []) {
+      await page.locator(selector).first().click({ timeout: 15000 })
+      await page.waitForTimeout(1600)
+    }
     const list = await audit(page, name, 0, { top: 0, bottom: 0 })
     if (list.length) found.push([name, list])
     if (w === 320 && name === 'access') await page.screenshot({ path: `${OUT}/320-access.png` })
@@ -151,7 +158,7 @@ for (const [label, w, h] of SIZES) {
 }
 
 console.log('\nTELEGRAM: высота клиента 640 из 844, шапка 56, домашняя полоса 34')
-for (const [name, state] of STATES) {
+for (const [name, state, action] of STATES) {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } })
   // Настоящий telegram-web-app.js из index.html перезаписывает window.Telegram
   // своим объектом и рапортует размеры браузера — эмуляцию он бы просто стёр.
@@ -160,20 +167,30 @@ for (const [name, state] of STATES) {
   await ctx.addInitScript(
     (s) => localStorage.setItem('traffic-city-progress', JSON.stringify(s)),
     {
-      quiz_lives: 5,
-      quiz_attempts: 0,
-      quiz_current_question: 0,
-      quiz_wrong_topics: [],
-      quiz_missed: [],
-      review: null,
-      created_at: Date.now(),
-      updated_at: Date.now(),
-      ...state,
+      // Обёртка {version, state} обязательна: zustand не понимает плоский
+      // объект и молча его выбрасывает. Здесь она когда-то потерялась — и весь
+      // телеграм-раздел проверял один и тот же первый экран, рапортуя «чисто».
+      version: PROGRESS_VERSION,
+      state: {
+        quiz_lives: 5,
+        quiz_attempts: 0,
+        quiz_current_question: 0,
+        quiz_wrong_topics: [],
+        quiz_missed: [],
+        review: null,
+        created_at: Date.now(),
+        updated_at: Date.now(),
+        ...state,
+      },
     },
   )
   const page = await ctx.newPage()
   await page.goto(BASE, { waitUntil: 'networkidle' })
   await page.waitForTimeout(1200)
+  for (const selector of action ?? []) {
+    await page.locator(selector).first().click({ timeout: 15000 })
+    await page.waitForTimeout(1600)
+  }
   const list = await audit(page, name, 640, { top: 56, bottom: 34 })
   if (list.length) {
     problems += list.length

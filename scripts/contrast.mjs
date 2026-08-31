@@ -56,6 +56,10 @@ const STATES = {
   '8b-lab3-video': [{ step: 'lab3', ...done }],
   '9-bundle-assemble': [{ step: 'bundle', ...done, result_site_opened: false }],
   '9b-bundle-payoff': [{ step: 'bundle', ...done }],
+  // Слои и переход к офферу — тоже отдельные кадры одного состояния: текст на
+  // них лежит на другой подложке, и мерить его надо отдельно.
+  '9c-bundle-meta': [{ step: 'bundle', ...done }, 'button:has-text("Дальше")'],
+  '9d-bundle-to-offer': [{ step: 'bundle', ...done, meta_reveal_completed: true }],
   '10-offer': [{ step: 'offer', ...done }],
   '11-purchased': [{ step: 'purchased', ...done, purchased: true }],
 }
