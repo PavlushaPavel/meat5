@@ -38,11 +38,11 @@ const done = {
 }
 
 /** Каждая фаза экрана мерится отдельно: текст на них лежит на разных кадрах. */
-const PLAY = 'button[aria-label="Слушать"]'
+const BAR = '[data-bottom-bar] button:not([disabled])'
+const PLAY = BAR
 const STATES = {
   '1-message': [{ step: 'message' }],
   '1b-message-voice': [{ step: 'message' }, PLAY],
-  '1c-message-skip': [{ step: 'message' }, 'button:has-text("Пропустить")'],
   '2-city': [{ step: 'city', ...done }],
   '3-lab1-bridge': [{ step: 'lab1', ...done, video_1_completed: false }],
   '3b-lab1-video': [{ step: 'lab1', ...done }],
@@ -51,14 +51,16 @@ const STATES = {
   '5b-lab2-video': [{ step: 'lab2', ...done }],
   '6-reward2': [{ step: 'reward2', ...done, assistant_2_opened: false }],
   '7-access-barrier': [{ step: 'access', ...done, quiz_completed: false, quiz_started: false }],
-  '7b-quiz': [{ step: 'access', ...done, quiz_completed: false, quiz_started: false }, 'button:has-text("Получить допуск")'],
+  // До двери — два нажатия подряд, как у человека; сам тест засеваем флагом.
+  '7b-access-door': [{ step: 'access', ...done, quiz_completed: false, quiz_started: false }, [BAR, BAR]],
+  '7c-quiz': [{ step: 'access', ...done, quiz_completed: false, quiz_started: true }],
   '8-lab3-bridge': [{ step: 'lab3', ...done, video_3_completed: false }],
   '8b-lab3-video': [{ step: 'lab3', ...done }],
   '9-bundle-assemble': [{ step: 'bundle', ...done, result_site_opened: false }],
   '9b-bundle-payoff': [{ step: 'bundle', ...done }],
   // Слои и переход к офферу — тоже отдельные кадры одного состояния: текст на
   // них лежит на другой подложке, и мерить его надо отдельно.
-  '9c-bundle-meta': [{ step: 'bundle', ...done }, 'button:has-text("Дальше")'],
+  '9c-bundle-meta': [{ step: 'bundle', ...done }, [BAR]],
   '9d-bundle-to-offer': [{ step: 'bundle', ...done, meta_reveal_completed: true }],
   '10-offer': [{ step: 'offer', ...done }],
   '11-purchased': [{ step: 'purchased', ...done, purchased: true }],
@@ -110,8 +112,17 @@ for (const name of names) {
   // Сцены раскрываются волной, самая длинная — награда: пока карточка едет,
   // её фон полупрозрачен, и замер поймает не панель, а персонажа за ней.
   await page.waitForTimeout(4200)
-  if (action) {
-    await page.click(action).catch(() => {})
+  // Промах по селектору НЕ проглатываем. Раньше здесь стоял .catch(() => {}),
+  // и когда селектор переставал совпадать, скрипт молча мерил предыдущую фазу
+  // и рапортовал зелёным: «голосовое» проверялось по неподвижной карточке, а
+  // тест — по экрану барьера, до которого он даже не доходил.
+  for (const selector of [action].flat().filter(Boolean)) {
+    try {
+      await page.locator(selector).first().click({ timeout: 15000 })
+    } catch {
+      const текст = await page.evaluate(() => document.body.innerText.replace(/\n+/g, ' | ').slice(0, 140))
+      throw new Error(`${name}: не нажалось «${selector}». На экране: ${текст}`)
+    }
     await page.waitForTimeout(2200)
   }
 

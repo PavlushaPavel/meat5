@@ -19,12 +19,14 @@ import { cn } from '../lib/cn'
 export function CityAccent({ text, className }: { text?: string; className?: string }) {
   return (
     <div className={cn('relative', className)}>
+      {/* Подложка тяжелее сверху и растворяется книзу — см. Subtitles: фраза
+          стоит над ведущим, и затемнение не должно доезжать до его лица. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -inset-x-[var(--gutter)] -top-sp6 -bottom-sp5"
+        className="pointer-events-none absolute -inset-x-[var(--gutter)] -top-sp7 -bottom-sp5"
         style={{
           background:
-            'linear-gradient(to bottom, transparent 0%, color-mix(in oklab, var(--color-ground-deep) 68%, transparent) 28%, color-mix(in oklab, var(--color-ground-deep) 84%, transparent) 100%)',
+            'linear-gradient(to bottom, color-mix(in oklab, var(--color-ground-deep) 78%, transparent) 0%, color-mix(in oklab, var(--color-ground-deep) 62%, transparent) 62%, transparent 100%)',
         }}
       />
       <AnimatePresence mode="wait">
