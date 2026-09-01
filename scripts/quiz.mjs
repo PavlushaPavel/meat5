@@ -1,10 +1,10 @@
 /**
  * Проверяет сам тест как содержимое, а не как вёрстку.
  *
- * Зачем. Верный ответ во всех двенадцати вопросах стоял ВТОРЫМ. Это не
- * опечатка и не мелочь: тест из двенадцати ситуаций проходился, не читая
- * условие, — достаточно двенадцать раз ткнуть в среднюю строку. Ни типы, ни
- * сборка, ни снимки такого не видят: данные формально корректны.
+ * Зачем. Верный ответ во всех двенадцати вопросах стоял ВТОРЫМ, а по тону был
+ * самым развёрнутым: тест проходился, не читая условие, — двенадцать раз ткнуть
+ * в среднюю строку или выбрать вариант подлиннее. Ни типы, ни сборка, ни снимки
+ * такого не видят: данные формально корректны.
  *
  * Запуск: node scripts/quiz.mjs
  */
@@ -14,9 +14,10 @@ const source = readFileSync(new URL('../src/content/quiz.ts', import.meta.url), 
 
 const LENGTH = 12
 const correct = [...source.matchAll(/^\s{4}correct:\s*(\d)/gm)].map((m) => Number(m[1]))
-const options = [...source.matchAll(/^\s{4}options:\s*\[([\s\S]*?)^\s{4}\]/gm)].map(
-  (m) => (m[1].match(/^\s*'/gm) ?? []).length,
+const lists = [...source.matchAll(/^\s{4}options:\s*\[([\s\S]*?)^\s{4}\]/gm)].map((m) =>
+  [...m[1].matchAll(/'([^']*)'/g)].map((o) => o[1]),
 )
+const options = lists.map((list) => list.length)
 const moments = [...source.matchAll(/^\s{4}moment:\s*'([^']*)'/gm)].map((m) => m[1])
 const protocols = [...source.matchAll(/^\s{4}protocol:\s*(\d)/gm)].map((m) => Number(m[1]))
 
@@ -49,6 +50,27 @@ for (let i = 2; i < correct.length; i++) {
   )
 }
 
+/**
+ * Тон тоже не должен выдавать ответ. Если верный вариант раз за разом самый
+ * длинный и подробный, а неверные — короткие отписки, тест снова проходится
+ * без знания предмета: достаточно выбирать «самый развёрнутый». Длина — то
+ * единственное в тоне, что можно померить машиной; она же и главный маркер.
+ */
+const lengths = lists.map((list) => list.map((option) => option.length))
+const longest = lengths.filter((L, i) => L[correct[i]] === Math.max(...L)).length
+const shortest = lengths.filter((L, i) => L[correct[i]] === Math.min(...L)).length
+const LIMIT = Math.ceil(LENGTH / 2) - 1
+require_(longest <= LIMIT, `верный ответ самый длинный в ${longest} вопросах из ${LENGTH}: «выбирай самый развёрнутый» проходит тест`)
+require_(shortest <= LIMIT, `верный ответ самый короткий в ${shortest} вопросах из ${LENGTH}: «выбирай самый короткий» проходит тест`)
+
+const mean = (xs) => xs.reduce((a, b) => a + b, 0) / xs.length
+const meanCorrect = mean(lengths.map((L, i) => L[correct[i]]))
+const meanWrong = mean(lengths.flatMap((L, i) => L.filter((_, j) => j !== correct[i])))
+require_(
+  Math.abs(meanCorrect - meanWrong) / meanWrong <= 0.2,
+  `верный ответ в среднем ${meanCorrect.toFixed(0)} знаков против ${meanWrong.toFixed(0)} у неверных: разница больше 20%`,
+)
+
 const seen = new Set()
 moments.forEach((moment, i) => {
   require_(/^\d{2}:\d{2}$/.test(moment), `вопрос ${i + 1}: таймкод «${moment}» не в формате мм:сс`)
@@ -62,7 +84,11 @@ protocols.forEach((protocol, i) => {
 
 if (problems.length === 0) {
   const spread = [...byPosition.entries()].sort().map(([p, c]) => `${p}→${c}`).join(', ')
-  console.log(`Тест в порядке: ${LENGTH} вопросов, ключ разложен по позициям (${spread}).`)
+  console.log(
+    `Тест в порядке: ${LENGTH} вопросов, ключ по позициям (${spread}), ` +
+      `верный ответ самый длинный в ${longest} и самый короткий в ${shortest} вопросах, ` +
+      `длина ${meanCorrect.toFixed(0)} против ${meanWrong.toFixed(0)} знаков.`,
+  )
 } else {
   console.log('ТЕСТ:\n')
   for (const problem of problems) console.log('  ✗ ' + problem)
