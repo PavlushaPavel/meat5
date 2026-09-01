@@ -252,6 +252,9 @@ export function AccessScreen({ onNext }: { onNext: () => void }) {
                         <button
                           key={option}
                           type="button"
+                          // Стабильная зацепка для проверок: по тексту варианта
+                          // цепляться нельзя — его правит заказчик.
+                          data-quiz-option={i}
                           disabled={picked !== null}
                           onClick={() => answer(i)}
                           className={cn(

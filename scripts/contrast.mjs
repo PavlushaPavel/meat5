@@ -10,6 +10,7 @@
  * Запуск: node scripts/contrast.mjs [состояние ...]
  */
 import { chromium } from 'playwright'
+import { readFileSync } from 'node:fs'
 import { mkdir } from 'node:fs/promises'
 import sharp from 'sharp'
 
@@ -39,6 +40,14 @@ const done = {
 
 /** Каждая фаза экрана мерится отдельно: текст на них лежит на разных кадрах. */
 const BAR = '[data-bottom-bar] button:not([disabled])'
+/**
+ * Ключ теста читаем из самого содержимого: иначе состояния «ответил верно» и
+ * «ошибся» зависят от того, где сегодня стоит правильный вариант, и однажды
+ * оба замера придутся на одну и ту же панель.
+ */
+const quizSource = readFileSync(new URL('../src/content/quiz.ts', import.meta.url), 'utf8')
+const FIRST_CORRECT = Number(quizSource.match(/^\s{4}correct:\s*(\d)/m)[1])
+const OPTION = (i) => `[data-quiz-option="${i}"]`
 const PLAY = BAR
 const STATES = {
   '1-message': [{ step: 'message' }],
@@ -54,6 +63,12 @@ const STATES = {
   // До двери — два нажатия подряд, как у человека; сам тест засеваем флагом.
   '7b-access-door': [{ step: 'access', ...done, quiz_completed: false, quiz_started: false }, [BAR, BAR]],
   '7c-quiz': [{ step: 'access', ...done, quiz_completed: false, quiz_started: true }],
+  // Разбор ответа — отдельный кадр: там появляются «Верно», объяснение и
+  // кнопка «пересмотреть», которых на самом вопросе нет.
+  '7d-quiz-correct': [{ step: 'access', ...done, quiz_completed: false, quiz_started: true }, [OPTION(FIRST_CORRECT)]],
+  '7e-quiz-wrong': [{ step: 'access', ...done, quiz_completed: false, quiz_started: true }, [OPTION((FIRST_CORRECT + 1) % 3)]],
+  '7f-quiz-failed': [{ step: 'access', ...done, quiz_completed: false, quiz_started: true, quiz_lives: 0, quiz_missed: ['08:42', '19:48'] }],
+  '7g-quiz-passed': [{ step: 'access', ...done }],
   '8-lab3-bridge': [{ step: 'lab3', ...done, video_3_completed: false }],
   '8b-lab3-video': [{ step: 'lab3', ...done }],
   '9-bundle-assemble': [{ step: 'bundle', ...done, result_site_opened: false }],
@@ -133,9 +148,12 @@ for (const name of names) {
     // при прокрутке, а замер показал бы контраст с жёлтой заливкой.
     const bar = document.querySelector('[data-bottom-bar]')
     const barTop = bar ? bar.getBoundingClientRect().top : Infinity
-    for (const el of document.querySelectorAll('h1, h2, p, li, span')) {
+    // Кнопки мерим наравне с текстом. Раньше их здесь не было — а именно на
+    // них живут плитки ответов теста, «пересмотреть 08:42» и все CTA: целый
+    // класс надписей проходил мимо проверки контраста.
+    for (const el of document.querySelectorAll('h1, h2, p, li, span, button')) {
       const text = (el.textContent ?? '').trim()
-      if (!text || el.querySelector('h1, h2, p, li, span')) continue
+      if (!text || el.querySelector('h1, h2, p, li, span, button')) continue
       const r = el.getBoundingClientRect()
       if (r.width < 24 || r.height < 8 || r.bottom < 0 || r.top > window.innerHeight) continue
       const cs = getComputedStyle(el)

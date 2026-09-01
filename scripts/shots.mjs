@@ -55,6 +55,9 @@ const STATES = [
   ['7-access-barrier', { step: 'access', ...done, quiz_completed: false, quiz_started: false }],
   ['7b-access-door', { step: 'access', ...done, quiz_completed: false, quiz_started: false }, ['[data-bottom-bar] button:not([disabled])', '[data-bottom-bar] button:not([disabled])']],
   ['7c-quiz', { step: 'access', ...done, quiz_completed: false, quiz_started: true }],
+  // Разбор ответа: панель объяснения появляется под вариантами и легко уезжает
+  // под кнопку — на самом вопросе этого блока ещё нет, проверять надо отдельно.
+  ['7d-quiz-answer', { step: 'access', ...done, quiz_completed: false, quiz_started: true }, ['[data-quiz-option="0"]']],
   ['8-lab3-bridge', { step: 'lab3', ...done, video_3_completed: false }],
   ['8b-lab3-video', { step: 'lab3', ...done }],
   ['9-bundle-assemble', { step: 'bundle', ...done, result_site_opened: false }],
