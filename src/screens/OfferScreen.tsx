@@ -92,6 +92,19 @@ export function OfferScreen({ onNext }: { onNext: () => void }) {
         <Scene src={asset('world/lab-interior.webp')} still />
         <Character pose="calm" side="right" height="40vh" delay={0.15} bleed={false} />
         {/*
+          Сумерки поверх фигуры. Исходник заканчивается на поясе, и без этого
+          ведущий обрывался посреди страницы ровной горизонтальной линией.
+          Кадр под ним растворяется в фоне сам (см. Scene.tsx) — здесь тот же
+          самый переход, но выше персонажа, чтобы низ сцены и низ фигуры уходили
+          в страницу вместе. Это не маска на картинке: маска сама по себе
+          читается как обрез (DESIGN.md §8.7).
+        */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-[24%]"
+          style={{ background: 'linear-gradient(to bottom, transparent 0%, var(--color-ground) 88%)' }}
+        />
+        {/*
           Задача 3: заголовок поднят выше и сужен, чтобы не ложиться на лицо
           персонажа. Герой стоит справа и достаёт до ~40vh снизу хедера —
           выше pt-sp3 и уже max-w-[7ch] держат «ТРАФИК ЛАБ» в верхнем левом

@@ -41,7 +41,9 @@ export function Reward2Screen({ onNext }: { onNext: () => void }) {
   return (
     <Screen bare>
       <Scene src={asset('world/offer-bench.webp')} still />
-      <Character pose="calm" side="right" height="56vh" delay={0.35} pin />
+      {/* См. Reward1: без bleed фигура целиком в кадре, а колонки текста
+          заканчиваются до головы ведущего (DESIGN.md §8.7). */}
+      <Character pose="calm" side="right" height="48vh" delay={0.35} bleed={false} pin />
 
       <div className="relative z-20 flex flex-1 flex-col px-[var(--gutter)] pt-sp5 pb-sp2">
         <RewardOffersScene />
@@ -64,7 +66,7 @@ export function Reward2Screen({ onNext }: { onNext: () => void }) {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: DUR.scene, ease: EASE_OUT, delay: BEAT.lead }}
-          className="on-scene mt-sp4 max-w-[230px] text-[16px] leading-relaxed text-ink"
+          className="on-scene mt-sp4 max-w-[min(190px,52vw)] text-[16px] leading-relaxed text-ink"
         >
           {REWARD_2.lead}
         </motion.p>
@@ -75,7 +77,7 @@ export function Reward2Screen({ onNext }: { onNext: () => void }) {
           прибиты к правому краю широкой строки. Итоговая строка крупнее и
           светится кислотой — это ответ, а не ещё один терм.
         */}
-        <div className="mt-sp4 flex w-[228px] max-w-full flex-col items-stretch gap-1">
+        <div className="mt-sp4 flex w-[min(190px,52vw)] max-w-full flex-col items-stretch gap-1">
           {REWARD_2.formula.map((term, i) => (
             <Fragment key={term}>
               <motion.span
@@ -128,7 +130,7 @@ export function Reward2Screen({ onNext }: { onNext: () => void }) {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: DUR.scene, ease: EASE_OUT, delay: formulaDone }}
-          className="on-scene mt-sp4 max-w-[250px] rounded-card border border-[var(--acid)]/50 bg-[color-mix(in_oklab,var(--color-ground-deep)_74%,transparent)] px-sp3 py-sp3 text-[17px] leading-snug font-semibold text-ink backdrop-blur-[2px]"
+          className="on-scene mt-sp4 max-w-[min(190px,52vw)] rounded-card border border-[var(--acid)]/50 bg-[color-mix(in_oklab,var(--color-ground-deep)_74%,transparent)] px-sp3 py-sp3 text-[17px] leading-snug font-semibold text-ink backdrop-blur-[2px]"
         >
           {REWARD_2.punch}
         </motion.p>
