@@ -146,6 +146,23 @@ for (const [name, state, action] of STATES) {
     const bar = document.querySelector('[data-bottom-bar]')
     const barTop = bar ? bar.getBoundingClientRect().top : Infinity
 
+    /*
+      Строка чтения. На всех экранах воронки текст начинается между 27% и 53%
+      высоты: кадр сверху, слова ниже середины, действие внизу. Один экран из
+      этого выпадал — мост перед первым протоколом ронял карточку на 72%, под
+      ней оставалась пустая полоса, а над ней полкадра ничего. Экран, где текст
+      начинается ниже 62%, читается как «текст упал на дно», а не как кадр.
+    */
+    const текст = [...document.querySelectorAll('main h1, main h2, main p, main li')]
+      .filter((el) => (el.textContent ?? '').trim().length > 6)
+      .map((el) => el.getBoundingClientRect())
+      .filter((r) => r.height > 0 && r.top < barTop)
+    if (текст.length) {
+      const верх = Math.min(...текст.map((r) => r.top))
+      if (верх > window.innerHeight * 0.62)
+        out.push(`текст начинается на ${Math.round((верх / window.innerHeight) * 100)}% высоты: верх кадра пустой`)
+    }
+
     for (const el of document.querySelectorAll('h1, h2, p, button, li, figure, section')) {
       const r = el.getBoundingClientRect()
       if (r.width === 0 || r.height === 0) continue

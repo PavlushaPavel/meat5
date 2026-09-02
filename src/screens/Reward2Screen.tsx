@@ -42,7 +42,7 @@ export function Reward2Screen({ onNext }: { onNext: () => void }) {
     <Screen bare>
       <Scene src={asset('world/offer-bench.webp')} still />
       {/* См. Reward1: без bleed фигура целиком в кадре, а колонки текста
-          заканчиваются до головы ведущего (DESIGN.md §8.7). */}
+          заканчиваются до головы ведущего (DESIGN.md §8.8). */}
       <Character pose="calm" side="right" height="48vh" delay={0.35} bleed={false} pin />
 
       <div className="relative z-20 flex flex-1 flex-col px-[var(--gutter)] pt-sp5 pb-sp2">

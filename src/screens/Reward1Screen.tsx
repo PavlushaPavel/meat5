@@ -49,7 +49,7 @@ export function Reward1Screen({ onNext }: { onNext: () => void }) {
         ширины фигуры, значит её левый край стоит на `ширина экрана −
         0.404 × высота`, и текст обязан заканчиваться раньше. На 320px это
         209px, на 430px — 249px; колонка в обоих случаях остаётся левее.
-        Проверяется постоянно: scripts/hero.mjs (DESIGN.md §8.7).
+        Проверяется постоянно: scripts/hero.mjs (DESIGN.md §8.8).
       */}
       <Character pose="calm" side="right" height="48vh" delay={0.35} bleed={false} pin />
 
