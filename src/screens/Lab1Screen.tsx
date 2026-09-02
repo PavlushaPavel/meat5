@@ -141,6 +141,27 @@ export function Lab1Screen({ onNext }: { onNext: () => void }) {
               )}
             </AnimatePresence>
             <div className="grow-[38]" />
+
+            {/*
+              Подсказка про тап. Карточки сменяются сами, но кадр можно листать
+              пальцем — без этой строки возможность есть, а знания о ней нет, и
+              человек просто ждёт таймер. Стоит внизу, в той полосе, которая на
+              этом такте всё равно пустая: панели действия здесь ещё нет.
+
+              Уходит вместе с последней карточкой: на ударе тап уже ничего не
+              пропускает, и подсказка стала бы враньём.
+            */}
+            {!punchReady && (
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: DUR.scene, ease: EASE_OUT, delay: 1.2 }}
+                className="label-mono on-scene pb-sp2 text-center text-ink-3"
+              >
+                {BEFORE_VIDEO_1.tapHint}
+              </motion.p>
+            )}
           </div>
         ) : (
           <motion.div

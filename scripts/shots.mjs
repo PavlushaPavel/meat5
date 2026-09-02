@@ -50,7 +50,12 @@ const STATES = [
   ['3b-lab1-video', { step: 'lab1', ...done }],
   ['4-reward1', { step: 'reward1', ...done, assistant_1_opened: false }],
   ['5-lab2-bridge', { step: 'lab2', ...done, video_2_completed: false }],
-  ['5b-lab2-video', { step: 'lab2', ...done }],
+  // Мост ко второму видео идёт тремя тактами (SPEC §10, текст владельца от
+  // 02.09.2026): «элемент есть» → «это пока не деньги» → «каждый видит своё».
+  // Последний такт самый плотный: сцена плюс пять реплик.
+  ['5b-lab2-money', { step: 'lab2', ...done, video_2_completed: false }, ['[data-bottom-bar] button:not([disabled])']],
+  ['5c-lab2-cases', { step: 'lab2', ...done, video_2_completed: false }, ['[data-bottom-bar] button:not([disabled])', '[data-bottom-bar] button:not([disabled])']],
+  ['5d-lab2-video', { step: 'lab2', ...done }],
   ['6-reward2', { step: 'reward2', ...done, assistant_2_opened: false }],
   ['7-access-barrier', { step: 'access', ...done, quiz_completed: false, quiz_started: false }],
   ['7b-access-door', { step: 'access', ...done, quiz_completed: false, quiz_started: false }, ['[data-bottom-bar] button:not([disabled])', '[data-bottom-bar] button:not([disabled])']],

@@ -57,7 +57,9 @@ const STATES = {
   '3b-lab1-video': [{ step: 'lab1', ...done }],
   '4-reward1': [{ step: 'reward1', ...done, assistant_1_opened: false }],
   '5-lab2-bridge': [{ step: 'lab2', ...done, video_2_completed: false }],
-  '5b-lab2-video': [{ step: 'lab2', ...done }],
+  '5b-lab2-money': [{ step: 'lab2', ...done, video_2_completed: false }, [BAR]],
+  '5c-lab2-cases': [{ step: 'lab2', ...done, video_2_completed: false }, [BAR, BAR]],
+  '5d-lab2-video': [{ step: 'lab2', ...done }],
   '6-reward2': [{ step: 'reward2', ...done, assistant_2_opened: false }],
   '7-access-barrier': [{ step: 'access', ...done, quiz_completed: false, quiz_started: false }],
   // До двери — два нажатия подряд, как у человека; сам тест засеваем флагом.

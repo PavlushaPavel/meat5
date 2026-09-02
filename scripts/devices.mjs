@@ -40,6 +40,8 @@ const STATES = [
   ['lab1', { step: 'lab1', ...done, video_1_completed: false }],
   ['reward1', { step: 'reward1', ...done, assistant_1_opened: false }],
   ['lab2', { step: 'lab2', ...done }],
+  // Третий такт моста — самый плотный экран воронки по количеству текста.
+  ['lab2-cases', { step: 'lab2', ...done, video_2_completed: false }, ['button:has-text("Дальше")', 'button:has-text("Дальше")']],
   ['reward2', { step: 'reward2', ...done, assistant_2_opened: false }],
   ['access', { step: 'access', ...done, quiz_completed: false, quiz_started: false }],
   ['lab3', { step: 'lab3', ...done }],
