@@ -181,18 +181,40 @@ export function AccessScreen({ onNext }: { onNext: () => void }) {
 
         {phase === 'door' && (
           <div className="flex flex-1 flex-col justify-center">
+            {/*
+              Зачем дверь заперта. Без этих двух строк экран объявляет правила
+              экзамена, но не отвечает на вопрос «а почему меня вообще
+              проверяют». Стоят перед самой дверью и перед кнопкой — в точке,
+              где человек решает, идти ли (см. комментарий у BARRIER_DOOR).
+            */}
+            <motion.p
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: DUR.ui, ease: EASE_OUT }}
+              className="on-scene max-w-[36ch] text-[16px] leading-relaxed text-ink-2"
+            >
+              {BARRIER_DOOR.why}
+            </motion.p>
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: DUR.scene, ease: EASE_OUT, delay: 0.5 }}
+              className="on-scene mt-sp3 max-w-[34ch] border-l-2 border-gold pl-sp3 text-[19px] leading-snug font-semibold text-ink"
+            >
+              «{BARRIER_DOOR.challenge}»
+            </motion.p>
             <motion.h1
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: DUR.scene, ease: EASE_OUT }}
-              className="display-m on-scene max-w-[12ch] text-ink"
+              transition={{ duration: DUR.scene, ease: EASE_OUT, delay: 1.15 }}
+              className="display-m on-scene mt-sp6 max-w-[12ch] text-ink"
             >
               {BARRIER_DOOR.title}
             </motion.h1>
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: DUR.ui, ease: EASE_OUT, delay: 0.15 }}
+              transition={{ duration: DUR.ui, ease: EASE_OUT, delay: 1.3 }}
               className="mt-sp4 flex items-center gap-sp2"
             >
               {BARRIER_DOOR.facts.map((fact) => (
@@ -207,7 +229,7 @@ export function AccessScreen({ onNext }: { onNext: () => void }) {
             <motion.p
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: DUR.ui, ease: EASE_OUT, delay: 0.28 }}
+              transition={{ duration: DUR.ui, ease: EASE_OUT, delay: 1.45 }}
               className="on-scene mt-sp4 max-w-[34ch] text-[15px] leading-relaxed whitespace-pre-line text-ink-2"
             >
               {BARRIER_DOOR.hint}
